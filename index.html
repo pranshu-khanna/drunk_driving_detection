@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOBER-DRIVE — Driver Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#ffffff; --panel:#f4f6f9; --panel2:#e8ecf2;
+  --bezel:#c8d0dc; --bezel2:#b0bac8;
+  --amber:#1a7fd4; --amber-dim:#5a9fd4; --amber-glow:#1a7fd4;
+  --green:#0d9e6a; --green-dim:#a0d4bc;
+  --red:#d93030; --text:#1a2030; --text-dim:#5a6a80;
+  --fo:'Orbitron',monospace; --fr:'Rajdhani',sans-serif; --fm:'Share Tech Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:var(--void);color:var(--text);font-family:var(--fm);overflow:hidden;font-size:16px;}
+body::before{content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);}
+body::after{content:'';position:fixed;inset:0;z-index:9001;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(200,208,220,0.4) 100%);}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(26,127,212,0.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(26,127,212,0.07) 1px,transparent 1px);
+  background-size:40px 40px;}
+
+/* ── LAYOUT ── */
+.cockpit{position:relative;z-index:1;width:100vw;height:100vh;display:grid;grid-template-rows:52px 1fr 44px;}
+
+/* ── TOP BAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;
+  border-bottom:1px solid var(--bezel2);background:var(--panel);position:relative;}
+.topbar::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),var(--amber-dim),var(--amber),transparent);opacity:.5;}
+.sys-id{font-family:var(--fo);font-weight:900;font-size:.78rem;letter-spacing:.28em;color:var(--amber);text-shadow:0 0 10px rgba(77,181,255,.6);}
+.sys-id span{color:var(--text-dim);font-weight:400;}
+.topbar-c{font-family:var(--fm);font-size:.68rem;letter-spacing:.16em;color:var(--text-dim);display:flex;gap:1.5rem;}
+.topbar-c .live{color:var(--green);animation:blink 2s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-r{display:flex;gap:1rem;align-items:center;font-size:.68rem;letter-spacing:.12em;}
+.alert-badge{color:var(--red);font-family:var(--fo);font-size:.6rem;border:1px solid var(--red);
+  padding:.1rem .4rem;animation:redPulse 1.5s ease-in-out infinite;}
+@keyframes redPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,48,48,0)}50%{box-shadow:0 0 8px 2px rgba(255,48,48,.3)}}
+.tbtn{font-family:var(--fo);font-size:.62rem;letter-spacing:.15em;background:transparent;
+  border:1px solid var(--bezel2);color:var(--text-dim);padding:.2rem .6rem;cursor:pointer;transition:all .2s;}
+.tbtn:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── INSTRUMENTS GRID ── */
+.instruments{display:grid;grid-template-columns:60% 1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:1px;background:var(--bezel);overflow:hidden;}
+
+/* ── STATUS BAR ── */
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;
+  border-top:1px solid var(--bezel2);background:var(--panel);font-size:.62rem;letter-spacing:.12em;color:var(--text-dim);}
+.statusbar .seg{display:flex;gap:1rem;align-items:center;}
+.sep{color:var(--bezel2);}
+
+/* ── TILE BASE ── */
+.tile{background:var(--panel);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.tile::before,.tile::after{content:'';position:absolute;width:16px;height:16px;z-index:3;pointer-events:none;opacity:.35;}
+.tile::before{top:0;right:0;border-top:1px solid var(--amber);border-right:1px solid var(--amber);}
+.tile::after{bottom:0;left:0;border-bottom:1px solid var(--amber);border-left:1px solid var(--amber);}
+.tile-label{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+  padding:.35rem .9rem;border-bottom:1px solid var(--bezel2);background:var(--panel2);z-index:2;}
+.tile-label .name{font-family:var(--fo);font-size:.54rem;font-weight:700;letter-spacing:.2em;color:var(--amber-dim);}
+.tile-label .st{font-size:.54rem;letter-spacing:.1em;}
+.st.ok{color:var(--green)}.st.warn{color:var(--amber)}.st.crit{color:var(--red);animation:blink 1s step-end infinite;}
+.tbody{padding:2rem .8rem .6rem;flex:1;display:flex;flex-direction:column;}
+
+/* ── CAMERA TILE ── */
+.tile-cam{grid-column:1;grid-row:1/3;}
+.cam-frame{flex:1;position:relative;background:#d8dde6;overflow:hidden;margin:0 .3rem .3rem;border:1px solid var(--bezel2);}
+#vid{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0;transition:opacity .8s;
+  filter:sepia(.25) hue-rotate(15deg) brightness(.9);}
+#vid.on{opacity:1;}
+#cvs{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;}
+.cam-hud{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.reticle{width:100px;height:70px;border:1px solid rgba(77,181,255,.4);position:relative;}
+.reticle::before{content:'';position:absolute;top:-4px;left:-4px;width:10px;height:10px;
+  border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
+.reticle::after{content:'';position:absolute;bottom:-4px;right:-4px;width:10px;height:10px;
+  border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
+.cam-scan{position:absolute;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(77,181,255,.6),transparent);
+  animation:camScan 4s ease-in-out infinite;opacity:0;}
+@keyframes camScan{0%{top:0;opacity:0}5%{opacity:.7}95%{opacity:.5}100%{top:100%;opacity:0}}
+.cam-data{position:absolute;bottom:5px;left:5px;right:5px;display:flex;justify-content:space-between;
+  font-size:.58rem;letter-spacing:.08em;color:rgba(230,237,247,.7);}
+.cam-face-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:.62rem;letter-spacing:.14em;color:rgba(230,237,247,.55);text-transform:uppercase;display:none;}
+.cam-start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:.7rem;background:rgba(240,242,246,.92);}
+.cam-start-btn{font-family:var(--fo);font-weight:700;font-size:.72rem;letter-spacing:.18em;
+  color:var(--amber);background:transparent;border:1px solid var(--amber);padding:.5rem 1.2rem;cursor:pointer;
+  clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);transition:all .2s;}
+.cam-start-btn:hover{background:var(--amber);color:var(--void);}
+.cam-start-lbl{font-size:.58rem;letter-spacing:.12em;color:var(--text-dim);}
+.sys-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:3px;}
+.sys-mini{background:var(--panel2);border:1px solid var(--bezel2);padding:.28rem .45rem;}
+.sys-mini-lbl{font-size:.5rem;letter-spacing:.1em;color:var(--text-dim);}
+.sys-mini-val{font-family:var(--fo);font-size:.62rem;}
+
+/* ── SOBERWATCH TILE ── */
+.tile-sober{grid-column:2;grid-row:1;}
+.sober-inner{display:flex;align-items:center;gap:1.2rem;flex:1;padding:.2rem .3rem;}
+.sober-dial{flex-shrink:0;position:relative;width:120px;height:120px;}
+.sober-dial svg{position:absolute;inset:0;}
+.dial-track{fill:none;stroke:var(--bezel2);stroke-width:7;}
+.dial-fill{fill:none;stroke:var(--green);stroke-width:7;stroke-linecap:butt;stroke-dasharray:283;
+  stroke-dashoffset:283;transition:stroke-dashoffset .6s,stroke .5s;transform-origin:center;transform:rotate(-90deg);}
+.dial-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dial-n{font-family:var(--fo);font-weight:900;font-size:2rem;line-height:1;color:var(--green);
+  transition:color .5s;text-shadow:0 0 18px currentColor;}
+.dial-u{font-size:.5rem;letter-spacing:.18em;color:var(--text-dim);}
+.sober-right{flex:1;display:flex;flex-direction:column;gap:.4rem;}
+.sober-v{font-family:var(--fo);font-weight:900;font-size:1rem;letter-spacing:.1em;color:var(--green);
+  transition:color .5s;text-shadow:0 0 14px currentColor;}
+.sober-bar-t{height:3px;background:var(--bezel2);overflow:hidden;}
+.sober-bar-f{height:100%;width:0%;background:var(--green);transition:width .5s,background .5s;box-shadow:0 0 5px currentColor;}
+.sigs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-top:.2rem;}
+.sig-m{background:var(--panel2);border:1px solid var(--bezel2);padding:.3rem .45rem;position:relative;overflow:hidden;}
+.sig-m-bg{position:absolute;left:0;top:0;bottom:0;width:0%;opacity:.12;transition:width .4s;}
+.sig-m-lbl{font-size:.52rem;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;}
+.sig-m-val{font-family:var(--fo);font-size:.76rem;font-weight:700;color:var(--green);transition:color .4s;}
+
+/* ── HR TILE ── */
+.tile-hr{grid-column:3;grid-row:1;}
+.hr-inner{display:flex;flex-direction:column;align-items:center;justify-content:space-between;flex:1;padding:.1rem .3rem .4rem;gap:.35rem;}
+.ecg-wrap{width:100%;height:56px;position:relative;overflow:hidden;border:1px solid var(--bezel2);background:rgba(0,0,0,.06);}
+#ecgCanvas{width:100%;height:100%;}
+.hr-readout-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.pulse-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:55px;height:55px;
+  border-radius:50%;border:2px solid var(--green);opacity:0;animation:pulseRing 1s ease-out infinite;}
+@keyframes pulseRing{0%{transform:translate(-50%,-50%) scale(.5);opacity:.8}100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+.hr-readout{display:flex;align-items:baseline;gap:.3rem;}
+.hr-n{font-family:var(--fo);font-weight:900;font-size:3rem;line-height:1;color:var(--green);
+  text-shadow:0 0 22px var(--green);transition:color .5s;}
+.hr-u{font-size:.62rem;letter-spacing:.12em;color:var(--text-dim);}
+.hr-zone-row{width:100%;display:flex;justify-content:space-between;}
+.hr-zone-lbl{font-size:.56rem;letter-spacing:.1em;color:var(--text-dim);}
+.hr-zone-val{font-family:var(--fo);font-size:.66rem;color:var(--green);transition:color .5s;}
+.hr-hist{width:100%;display:flex;align-items:flex-end;gap:2px;height:24px;}
+.hr-hbar{flex:1;background:var(--green-dim);transition:height .4s,background .4s;min-height:2px;}
+.hr-hbar.latest{background:var(--green);}
+
+/* ── SPEECH TILE ── */
+.tile-speech{grid-column:2;grid-row:2;}
+.speech-inner{display:flex;align-items:center;gap:.9rem;flex:1;padding:.1rem .3rem .4rem;}
+.speech-nd{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;}
+.speech-nd-lbl{font-size:.64rem;letter-spacing:.12em;color:var(--text-dim);text-align:center;}
+.speech-run-btn{font-family:var(--fo);font-size:.6rem;letter-spacing:.12em;background:transparent;
+  border:1px solid var(--amber-dim);color:var(--amber-dim);padding:.3rem .7rem;cursor:pointer;transition:all .2s;}
+.speech-run-btn:hover{border-color:var(--amber);color:var(--amber);}
+.speech-scores{display:none;flex-direction:column;gap:.38rem;flex:1;}
+.speech-scores.on{display:flex;}
+.scr-row{display:flex;align-items:center;gap:.5rem;}
+.scr-lbl{font-size:.56rem;letter-spacing:.1em;color:var(--text-dim);width:60px;flex-shrink:0;}
+.scr-bt{flex:1;height:5px;background:var(--bezel2);overflow:hidden;}
+.scr-bf{height:100%;width:0%;background:var(--green);transition:width .5s,background .5s;}
+.scr-val{font-family:var(--fo);font-size:.68rem;width:30px;text-align:right;color:var(--green);transition:color .4s;}
+.speech-transcript-lbl{font-size:.58rem;font-style:italic;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.speech-oa{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.15rem;
+  border-left:1px solid var(--bezel2);padding-left:.8rem;min-width:60px;display:none;}
+.speech-oa.on{display:flex;}
+.speech-on{font-family:var(--fo);font-weight:900;font-size:1.75rem;color:var(--green);
+  text-shadow:0 0 14px currentColor;transition:color .5s;}
+.speech-olbl{font-size:.52rem;letter-spacing:.1em;color:var(--text-dim);}
+
+/* ── DATETIME TILE ── */
+.tile-dt{grid-column:3;grid-row:2;}
+.dt-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:.25rem;}
+.dt-day-lbl{font-family:var(--fo);font-size:.56rem;letter-spacing:.22em;color:var(--amber-dim);}
+.dt-time{font-family:var(--fo);font-weight:900;font-size:2.4rem;letter-spacing:.05em;
+  color:var(--amber);text-shadow:0 0 18px var(--amber);line-height:1;}
+.dt-colon{animation:blink 1s step-end infinite;}
+.dt-divider{width:55%;height:1px;background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);margin:.2rem 0;}
+.dt-date{font-family:var(--fr);font-weight:300;font-size:.9rem;letter-spacing:.16em;
+  color:var(--text-dim);text-transform:uppercase;}
+.dt-elapsed{font-size:.7rem;letter-spacing:.18em;color:var(--text-dim);text-align:center;}
+.dt-elapsed span{font-family:var(--fo);font-weight:900;font-size:2.6rem;letter-spacing:.05em;display:block;text-align:center;text-shadow:0 0 18px currentColor;line-height:1.1;margin-top:.3rem;}
+
+/* ══════════════════════════════════════════════
+   IMPAIRMENT SPEECH TEST POPUP
+   Triggered after sustained high impairment score
+══════════════════════════════════════════════ */
+/* Countdown bar that shows across top of screen */
+.impair-bar{
+  position:fixed;top:52px;left:0;right:0;z-index:600;height:3px;
+  background:transparent;pointer-events:none;transition:opacity .4s;
+}
+.impair-bar-fill{
+  height:100%;width:0%;background:var(--red);
+  box-shadow:0 0 8px var(--red);
+  transition:width linear; /* JS sets duration dynamically */
+}
+
+/* Full-screen dimming overlay */
+.impair-overlay{
+  display:none;position:fixed;inset:0;z-index:700;
+  background:rgba(240,242,246,.90);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;
+}
+.impair-overlay.on{display:flex;}
+
+/* The popup card */
+.impair-card{
+  background:var(--panel);border:1px solid var(--red);width:min(580px,94vw);
+  position:relative;overflow:hidden;
+}
+.impair-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--red),transparent);
+}
+/* Red glow pulse on card */
+.impair-card::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 30px rgba(255,48,48,.08);
+  animation:cardGlow 2s ease-in-out infinite;
+}
+@keyframes cardGlow{0%,100%{opacity:.5}50%{opacity:1}}
+
+.impair-header{
+  padding:1.2rem 1.6rem .9rem;
+  border-bottom:1px solid rgba(255,48,48,.2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.impair-title{
+  font-family:var(--fo);font-weight:900;font-size:.9rem;letter-spacing:.2em;
+  color:var(--red);text-shadow:0 0 14px rgba(255,48,48,.6);
+}
+.impair-score-badge{
+  font-family:var(--fo);font-weight:900;font-size:1.4rem;
+  color:var(--red);text-shadow:0 0 20px rgba(255,48,48,.8);
+}
+
+/* Two states: prompt and recording */
+.impair-prompt{padding:1.4rem 1.6rem;}
+.impair-explain{
+  font-size:.63rem;letter-spacing:.06em;color:var(--text-dim);
+  line-height:1.9;margin-bottom:1.2rem;
+}
+.impair-sentence-box{
+  background:var(--panel2);border:1px solid var(--bezel2);border-left:3px solid var(--red);
+  padding:1rem 1.2rem;font-family:var(--fr);font-size:1.05rem;font-weight:600;
+  color:#fff;line-height:1.65;margin-bottom:1.2rem;
+}
+.impair-mic-row{display:flex;align-items:center;gap:1.2rem;}
+.impair-mic{
+  width:60px;height:60px;border-radius:50%;border:2px solid var(--amber);
+  background:transparent;color:var(--amber);font-size:1.4rem;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.impair-mic:hover{background:rgba(77,181,255,.12);}
+.impair-mic.rec{border-color:var(--red);color:var(--red);animation:redPulse 1s ease-in-out infinite;}
+.impair-mic-info{display:flex;flex-direction:column;gap:.3rem;}
+.impair-mic-lbl{font-family:var(--fo);font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);}
+.impair-transcript{font-size:.62rem;font-style:italic;color:var(--text-dim);min-height:1.2em;}
+
+/* Results state */
+.impair-results{display:none;padding:1.2rem 1.6rem;border-top:1px solid var(--bezel2);}
+.impair-results.on{display:block;}
+.ir-title{font-size:.58rem;letter-spacing:.18em;color:var(--text-dim);text-transform:uppercase;margin-bottom:.8rem;}
+.ir-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:.8rem;}
+.ir-item{background:var(--panel2);border:1px solid var(--bezel2);padding:.5rem .7rem;text-align:center;}
+.ir-lbl{font-size:.48rem;letter-spacing:.12em;color:var(--text-dim);display:block;margin-bottom:.2rem;}
+.ir-val{font-family:var(--fo);font-weight:700;font-size:1.1rem;}
+.ir-overall{
+  background:var(--panel2);border:1px solid var(--bezel2);padding:.8rem;
+  text-align:center;display:flex;align-items:center;justify-content:space-between;
+}
+.ir-overall-label{font-size:.58rem;letter-spacing:.15em;color:var(--text-dim);}
+.ir-overall-score{font-family:var(--fo);font-weight:900;font-size:1.6rem;}
+.ir-verdict{font-family:var(--fo);font-size:.62rem;letter-spacing:.12em;}
+
+/* Comparison row */
+.ir-comparison{
+  display:flex;align-items:center;gap:.6rem;margin-top:.7rem;
+  font-size:.58rem;letter-spacing:.08em;color:var(--text-dim);
+  background:var(--panel2);border:1px solid var(--bezel2);padding:.5rem .8rem;
+}
+.ir-comp-arrow{font-size:.8rem;}
+.ir-comp-label{flex:1;}
+.ir-comp-val{font-family:var(--fo);font-size:.65rem;}
+
+.impair-footer{
+  padding:.9rem 1.6rem;border-top:1px solid var(--bezel2);
+  display:flex;align-items:center;justify-content:space-between;gap:.8rem;
+}
+.impair-dismiss{
+  font-family:var(--fo);font-size:.58rem;letter-spacing:.15em;
+  background:transparent;border:1px solid var(--bezel2);color:var(--text-dim);
+  padding:.4rem .9rem;cursor:pointer;transition:all .2s;
+}
+.impair-dismiss:hover{border-color:var(--amber);color:var(--amber);}
+.impair-confirm{
+  font-family:var(--fo);font-size:.58rem;letter-spacing:.15em;
+  background:var(--red);color:#fff;border:none;
+  padding:.4rem .9rem;cursor:pointer;transition:background .2s;
+  clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+}
+.impair-confirm:hover{background:#ff5555;}
+.impair-cooldown-note{font-size:.5rem;letter-spacing:.1em;color:var(--text-dim);}
+
+/* ── AUTH MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;z-index:800;background:rgba(6,7,9,.93);
+  align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-bg.on{display:flex;}
+.modal-panel{background:var(--panel);border:1px solid var(--bezel2);position:relative;padding:1.8rem;}
+.modal-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);}
+.modal-title{font-family:var(--fo);font-weight:900;font-size:.8rem;letter-spacing:.25em;color:var(--amber);margin-bottom:.25rem;}
+.modal-sub{font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);margin-bottom:1.4rem;}
+.auth-panel{width:340px;}
+.auth-field{margin-bottom:.9rem;}
+.auth-field label{display:block;font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:var(--amber-dim);margin-bottom:.3rem;}
+.auth-field input{width:100%;background:var(--void);border:1px solid var(--bezel2);color:var(--text);
+  font-family:var(--fm);font-size:.78rem;padding:.55rem .8rem;outline:none;transition:border-color .2s;}
+.auth-field input:focus{border-color:var(--amber);}
+.auth-err{font-size:.58rem;color:var(--red);min-height:.9em;margin:.25rem 0;}
+.auth-submit{width:100%;font-family:var(--fo);font-weight:700;font-size:.7rem;letter-spacing:.2em;
+  text-transform:uppercase;background:var(--amber);color:var(--void);border:none;
+  padding:.75rem;cursor:pointer;transition:background .2s;
+  clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);}
+.auth-submit:hover{background:var(--amber-glow);}
+.auth-sw{text-align:center;margin-top:.9rem;font-size:.58rem;color:var(--text-dim);}
+.auth-sw a{color:var(--amber);cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="cockpit">
+
+  <!-- ── TOP BAR ── -->
+  <div class="topbar">
+    <div class="sys-id">SOBER-DRIVE <span>/ DRIVER SYSTEMS v2.4</span></div>
+    <div class="topbar-c">
+      <span class="live">● SYSTEM ACTIVE</span>
+      <span id="tbUser">USER: —</span>
+      <span id="tbBase" style="color:var(--amber-dim)">BASELINE: —</span>
+    </div>
+    <div class="topbar-r">
+      <span class="alert-badge" id="tbAlert" style="display:none">⚠ IMPAIRMENT</span>
+      <span id="tbSpeech" style="color:var(--text-dim)">SPEECH: IDLE</span>
+      <button class="tbtn" id="authBtn" onclick="showAuth('login')">LOGIN</button>
+    </div>
+  </div>
+
+  <!-- ── INSTRUMENTS ── -->
+  <div class="instruments">
+
+    <!-- CAMERA (spans both rows) -->
+    <div class="tile tile-cam">
+      <div class="tile-label"><span class="name">DRIVER CAM — VISION ANALYSIS</span><span style="display:flex;align-items:center;gap:.6rem;"><button class="tbtn" onclick="showLandmarks=!showLandmarks;this.style.color=showLandmarks?'var(--amber)':'';this.style.borderColor=showLandmarks?'var(--amber)':'var(--bezel2)'">LANDMARKS</button><span class="st" id="camSt">STANDBY</span></span></div>
+      <div class="tbody">
+        <div class="cam-frame">
+          <video id="vid" autoplay playsinline muted></video>
+          <canvas id="cvs"></canvas>
+          <div class="cam-hud"><div class="reticle"></div></div>
+          <div class="cam-scan"></div>
+          <div class="cam-data">
+            <span id="camFps">--fps</span>
+            <span id="camRes">--</span>
+            <span id="camFace">FACE: --</span>
+          </div>
+          <div class="cam-face-msg" id="noFaceMsg">NO FACE DETECTED</div>
+          <div class="cam-start" id="camStart">
+            <button class="cam-start-btn" onclick="startCamera()">▶ START CAMERA FEED</button>
+            <span class="cam-start-lbl">DRIVER IDENTIFICATION REQUIRED</span>
+          </div>
+        </div>
+        <div class="sys-mini-grid">
+          <div class="sys-mini"><div class="sys-mini-lbl">WHISPER AI</div><div class="sys-mini-val" id="sysW">CHECKING</div></div>
+          <div class="sys-mini"><div class="sys-mini-lbl">BASELINE</div><div class="sys-mini-val" id="sysB" style="color:var(--amber)">—</div></div>
+          <div class="sys-mini" onclick="window.location='/setup'" style="cursor:pointer">
+            <div class="sys-mini-lbl">RECALIBRATE</div>
+            <div class="sys-mini-val" style="color:var(--amber-dim)">→ SETUP</div>
+          </div>
+          <div class="sys-mini"><div class="sys-mini-lbl">SESSION</div><div class="sys-mini-val" id="sesTimer" style="color:var(--amber-dim)">00:00</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOBERWATCH -->
+    <div class="tile tile-sober">
+      <div class="tile-label"><span class="name">SOBERWATCH — IMPAIRMENT INDEX</span><span class="st ok" id="soberSt">NOMINAL</span></div>
+      <div class="tbody">
+        <div class="sober-inner">
+          <div class="sober-dial">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <g stroke="rgba(77,181,255,0.28)" stroke-width="1">
+                <line x1="60" y1="7" x2="60" y2="14" transform="rotate(0 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="11" transform="rotate(45 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="14" transform="rotate(90 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="11" transform="rotate(135 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="14" transform="rotate(180 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="11" transform="rotate(225 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="14" transform="rotate(270 60 60)"/>
+                <line x1="60" y1="7" x2="60" y2="11" transform="rotate(315 60 60)"/>
+              </g>
+              <circle class="dial-track" cx="60" cy="60" r="45"/>
+              <circle class="dial-fill" cx="60" cy="60" r="45" id="dialFill"/>
+            </svg>
+            <div class="dial-ctr">
+              <div class="dial-n" id="dialN">--</div>
+              <div class="dial-u">IMPAIRMENT</div>
+            </div>
+          </div>
+          <div class="sober-right">
+            <div class="sober-v" id="soberV">AWAITING DATA</div>
+            <div class="sober-bar-t"><div class="sober-bar-f" id="soberBar"></div></div>
+            <div class="sigs-grid" style="grid-template-columns:1fr 1fr 1fr;">
+              <div class="sig-m"><div class="sig-m-bg" id="smb-eye"></div><div class="sig-m-lbl">EYE DROOP</div><div class="sig-m-val" id="smv-eye">--</div></div>
+              <div class="sig-m"><div class="sig-m-bg" id="smb-redness"></div><div class="sig-m-lbl">EYE REDNESS</div><div class="sig-m-val" id="smv-redness">--</div></div>
+              <div class="sig-m"><div class="sig-m-bg" id="smb-mouth"></div><div class="sig-m-lbl">MOUTH OPEN</div><div class="sig-m-val" id="smv-mouth">--</div></div>
+              <div class="sig-m"><div class="sig-m-bg" id="smb-tilt"></div><div class="sig-m-lbl">HEAD TILT</div><div class="sig-m-val" id="smv-tilt">--</div></div>
+              <div class="sig-m" style="grid-column:span 2;"><div class="sig-m-bg" id="smb-sym"></div><div class="sig-m-lbl">SYMMETRY</div><div class="sig-m-val" id="smv-sym">--</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEART RATE -->
+    <div class="tile tile-hr">
+      <div class="tile-label"><span class="name">BIOMETRIC — CARDIAC MONITOR</span><span class="st ok" id="hrSt">STEERING SENSOR</span></div>
+      <div class="tbody">
+        <div class="hr-inner">
+          <div class="ecg-wrap"><canvas id="ecgCanvas"></canvas></div>
+          <div class="hr-readout-wrap">
+            <div class="pulse-ring" id="pulseRing"></div>
+            <div class="hr-readout"><div class="hr-n" id="hrN">--</div><div class="hr-u">BPM</div></div>
+          </div>
+          <div class="hr-zone-row"><span class="hr-zone-lbl">CARDIAC ZONE</span><span class="hr-zone-val" id="hrZone">—</span></div>
+          <div class="hr-hist" id="hrHist"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPEECH -->
+    <div class="tile tile-speech">
+      <div class="tile-label"><span class="name">SPEECH ANALYSIS — ARTICULATION</span><span class="st" id="speechSt">IDLE</span></div>
+      <div class="tbody">
+        <div class="speech-inner">
+          <div class="speech-nd" id="speechND">
+            <div class="speech-nd-lbl">NO SPEECH DATA<br>AWAITING TEST</div>
+            <button class="speech-run-btn" onclick="openSpeechTest(true)">▶ RUN MANUAL TEST</button>
+          </div>
+          <div class="speech-scores" id="speechScores">
+            <div class="scr-row"><span class="scr-lbl">SLUR</span><div class="scr-bt"><div class="scr-bf" id="sbf-slur"></div></div><span class="scr-val" id="sv-slur">--</span></div>
+            <div class="scr-row"><span class="scr-lbl">PACE</span><div class="scr-bt"><div class="scr-bf" id="sbf-pace"></div></div><span class="scr-val" id="sv-pace">--</span></div>
+            <div class="scr-row"><span class="scr-lbl">PAUSES</span><div class="scr-bt"><div class="scr-bf" id="sbf-pause"></div></div><span class="scr-val" id="sv-pause">--</span></div>
+            <div class="speech-transcript-lbl" id="speechTL"></div>
+          </div>
+          <div class="speech-oa" id="speechOA">
+            <div class="speech-olbl">SPEECH</div>
+            <div class="speech-on" id="speechON">--</div>
+            <div class="speech-olbl">SCORE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATETIME -->
+    <div class="tile tile-dt">
+      <div class="tile-label"><span class="name">ALCOHOL DETECTED IN CABIN</span><span class="st ok">SYNC</span></div>
+      <div class="tbody">
+        <div class="dt-inner">
+          <div class="dt-elapsed">BAC: <span id="dtEl">0.000 g/dL</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /instruments -->
+
+  <!-- ── STATUS BAR ── -->
+  <div class="statusbar">
+    <div class="seg"><span>SYS NOMINAL</span><span class="sep">|</span><span id="sbCam">CAM: OFFLINE</span><span class="sep">|</span><span id="sbSpch">SPEECH: OFFLINE</span></div>
+    <div class="seg"><span id="sbLog">SOBER-DRIVE EV PLATFORM READY</span></div>
+    <div class="seg"><span>SOBER-DRIVE EV PLATFORM</span><span class="sep">|</span><span style="color:var(--amber-dim)">BUILD 2.4.0</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     IMPAIRMENT DETECTION BAR (fills over SUSTAINED_SECS)
+══════════════════════════════════════════════════ -->
+<div class="impair-bar" id="impairBar">
+  <div class="impair-bar-fill" id="impairBarFill"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     IMPAIRMENT SPEECH TEST OVERLAY
+══════════════════════════════════════════════════ -->
+<div class="impair-overlay" id="impairOverlay">
+  <div class="impair-card">
+
+    <div class="impair-header">
+      <div>
+        <div style="font-size:.52rem;letter-spacing:.2em;color:rgba(255,48,48,.7);margin-bottom:.2rem;">⚠ ALT-001 — SUSTAINED IMPAIRMENT DETECTED</div>
+        <div class="impair-title">SPEECH VERIFICATION REQUIRED</div>
+      </div>
+      <div class="impair-score-badge" id="impairScoreBadge">--</div>
+    </div>
+
+    <div class="impair-prompt" id="impairPrompt">
+      <div class="impair-explain">
+        Facial analysis has detected elevated impairment signals sustained over several seconds.
+        Read the sentence below clearly at your normal pace to confirm your cognitive state.
+        Your speech will be compared against your sober baseline.
+      </div>
+      <div class="impair-sentence-box" id="impairSentence">—</div>
+      <div class="impair-mic-row">
+        <button class="impair-mic" id="impairMic" onclick="toggleImpairMic()">🎤</button>
+        <div class="impair-mic-info">
+          <div class="impair-mic-lbl" id="impairMicLbl">PRESS MICROPHONE TO BEGIN RECORDING</div>
+          <div class="impair-transcript" id="impairTranscript"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="impair-results" id="impairResults">
+      <div class="ir-title">SPEECH ANALYSIS RESULTS</div>
+      <div class="ir-grid">
+        <div class="ir-item"><span class="ir-lbl">SLUR INDEX</span><div class="ir-val" id="irSlur">--</div></div>
+        <div class="ir-item"><span class="ir-lbl">PACE INDEX</span><div class="ir-val" id="irPace">--</div></div>
+        <div class="ir-item"><span class="ir-lbl">PAUSE INDEX</span><div class="ir-val" id="irPause">--</div></div>
+      </div>
+      <div class="ir-overall">
+        <div>
+          <div class="ir-overall-label">COMBINED IMPAIRMENT (FACE + SPEECH)</div>
+          <div class="ir-verdict" id="irVerdict">—</div>
+        </div>
+        <div class="ir-overall-score" id="irOverall">--</div>
+      </div>
+      <div class="ir-comparison" id="irComparison">
+        <span class="ir-comp-arrow">↔</span>
+        <span class="ir-comp-label" id="irCompLabel">Comparing to your sober speech baseline...</span>
+        <span class="ir-comp-val" id="irCompVal">—</span>
+      </div>
+    </div>
+
+    <div class="impair-footer">
+      <div class="impair-cooldown-note" id="impairCooldownNote">Test will not repeat for 5 minutes after dismissal.</div>
+      <div style="display:flex;gap:.6rem;">
+        <button class="impair-dismiss" onclick="dismissImpairTest()">DISMISS</button>
+        <button class="impair-confirm" id="impairConfirmBtn" style="display:none" onclick="dismissImpairTest()">ACKNOWLEDGED</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── AUTH MODAL ── -->
+<div class="modal-bg" id="authModal">
+  <div class="modal-panel auth-panel">
+    <div class="modal-title" id="authTitle">DRIVER AUTHENTICATION</div>
+    <div class="modal-sub"   id="authSub">Sign in to your driver profile</div>
+    <div class="auth-field"><label>Username</label><input type="text" id="authUser" placeholder="username" autocomplete="username"></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="auth-err" id="authErr"></div>
+    <button class="auth-submit" onclick="submitAuth()"><span id="authBtnT">AUTHENTICATE</span></button>
+    <div class="auth-sw"><span id="authSwT">No profile?</span> <a onclick="toggleAuthMode()" id="authSwL"> Create one</a></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let authMode = 'login', isLoggedIn = false, hasBaseline = false;
+let speechReady = false, sentences = [], hasSpeechBase = false;
+let camActive = false, analyzeId = null;
+let prevOverall = -1;
+let sessionStart = Date.now();
+
+// Impairment detection — only trigger speech test after SUSTAINED high score
+const IMPAIR_THRESHOLD  = 40;   // score must exceed this
+const SUSTAINED_SECS    = 8;    // for this many consecutive seconds
+const COOLDOWN_MINS     = 5;    // don't repeat for this long after dismiss
+let impairHighStart     = null; // when score first crossed threshold
+let impairTestOpen      = false;
+let impairCooldownUntil = 0;
+let impairBarTimeout    = null;
+
+// Speech test (impairment popup)
+let testRecording = false, mediaRec = null, testChunks = [];
+let curTestSentenceIdx = 0;
+let lastFacialScore = 0;
+
+const vid = document.getElementById('vid');
+const cvs = document.getElementById('cvs');
+
+// ══════════════════════════════════════════════════════════════════
+// ECG + HR SIMULATION
+// ══════════════════════════════════════════════════════════════════
+const ecgC = document.getElementById('ecgCanvas');
+const ecgX = ecgC.getContext('2d');
+let ecgPts = [], ecgPos = 0, curHR = 72, hrHist = [], ecgPat = [], ecgPI = 0;
+
+function initECG() {
+  ecgC.width = ecgC.offsetWidth || 240; ecgC.height = ecgC.offsetHeight || 56;
+  for (let i = 0; i < ecgC.width; i++) ecgPts.push(ecgC.height / 2);
+  tickECG();
+}
+function genPeak() {
+  const h = ecgC.height, m = h * .55;
+  return [m,m,m,m-2,m+2,m-2,m,m,m-h*.38,m+h*.46,m-h*.12,m,m,m+h*.09,m+h*.09,m,m,m,m,m,m,m,m,m,m,m,m,m];
+}
+function tickECG() {
+  if (!ecgPat.length || ecgPI >= ecgPat.length) { ecgPat = genPeak(); ecgPI = 0; }
+  ecgPts[ecgPos] = ecgPat[ecgPI++] ?? ecgC.height * .55;
+  ecgPos = (ecgPos + 1) % ecgPts.length;
+  const w = ecgC.width, h = ecgC.height;
+  ecgX.clearRect(0, 0, w, h);
+  ecgX.strokeStyle = 'rgba(77,181,255,0.08)'; ecgX.lineWidth = 1;
+  for (let x = 0; x < w; x += 20) { ecgX.beginPath(); ecgX.moveTo(x,0); ecgX.lineTo(x,h); ecgX.stroke(); }
+  for (let y = 0; y < h; y += 20) { ecgX.beginPath(); ecgX.moveTo(0,y); ecgX.lineTo(w,y); ecgX.stroke(); }
+  ecgX.beginPath(); ecgX.strokeStyle = '#39ff6a'; ecgX.lineWidth = 1.4;
+  ecgX.shadowColor = '#39ff6a'; ecgX.shadowBlur = 4;
+  const s = (ecgPos + 1) % ecgPts.length;
+  ecgX.moveTo(0, ecgPts[s]);
+  for (let i = 1; i < ecgPts.length; i++) ecgX.lineTo((i / ecgPts.length) * w, ecgPts[(s + i) % ecgPts.length]);
+  ecgX.stroke(); ecgX.shadowBlur = 0;
+  setTimeout(tickECG, 1000 / 60);
+}
+
+let hrTarget = 72, hrCur = 72;
+function simHR() {
+  hrCur += (hrTarget - hrCur) * .05;
+  if (Math.random() < .012) hrTarget = 58 + Math.random() * 44;
+  curHR = Math.round(hrCur);
+  const el = document.getElementById('hrN');
+  el.textContent = curHR;
+  const c = curHR < 60 ? 'var(--amber)' : curHR < 100 ? 'var(--green)' : curHR < 135 ? 'var(--amber)' : 'var(--red)';
+  const z = curHR < 60 ? 'LOW' : curHR < 100 ? 'NORMAL' : curHR < 135 ? 'ELEVATED' : 'HIGH';
+  el.style.color = c; el.style.textShadow = `0 0 18px ${c}`;
+  document.getElementById('hrZone').textContent = z; document.getElementById('hrZone').style.color = c;
+  document.getElementById('hrSt').textContent = z;
+  document.getElementById('hrSt').className = 'st ' + (curHR < 100 ? 'ok' : curHR < 130 ? 'warn' : 'crit');
+  document.getElementById('pulseRing').style.animationDuration = `${Math.round(60000 / curHR)}ms`;
+  hrHist.push(curHR); if (hrHist.length > 18) hrHist.shift();
+  renderHRHist();
+  setTimeout(simHR, 1000);
+}
+function renderHRHist() {
+  const el = document.getElementById('hrHist'); el.innerHTML = '';
+  const mx = Math.max(...hrHist, 100);
+  hrHist.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'hr-hbar' + (i === hrHist.length - 1 ? ' latest' : '');
+    d.style.height = `${Math.round((v / mx) * 24)}px`;
+    const c = v < 100 ? 'var(--green-dim)' : v < 130 ? 'var(--amber-dim)' : 'var(--red-dim)';
+    d.style.background = i === hrHist.length - 1 ? (v < 100 ? 'var(--green)' : v < 130 ? 'var(--amber)' : 'var(--red)') : c;
+    el.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════════════════
+const DAYS  = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function tickClock() {
+  const n = new Date(), p = v => String(v).padStart(2,'0');
+  document.getElementById('dtH').textContent = p(n.getHours());
+  document.getElementById('dtM').textContent = p(n.getMinutes());
+  document.getElementById('dtS').textContent = p(n.getSeconds());
+  document.getElementById('dtDay').textContent  = DAYS[n.getDay()];
+  document.getElementById('dtDate').textContent = `${MONTHS[n.getMonth()]} ${p(n.getDate())} ${n.getFullYear()}`;
+  const el = Math.floor((Date.now() - sessionStart) / 1000);
+  document.getElementById('sesTimer').textContent = `${p(Math.floor(el/60))}:${p(el%60)}`;
+  // BAC simulation: slow drift with small random noise
+  if (typeof window._bac === 'undefined') { window._bac = 0.042; window._bacDir = 1; }
+  window._bac += (Math.random() * 0.003 - 0.001) + window._bacDir * 0.001;
+  if (window._bac > 0.12) window._bacDir = -1;
+  if (window._bac < 0.01) window._bacDir = 1;
+  window._bac = Math.max(0.005, Math.min(0.149, window._bac));
+  const bacEl = document.getElementById('dtEl');
+  bacEl.textContent = window._bac.toFixed(3) + ' g/dL';
+  bacEl.style.color = window._bac >= 0.08 ? 'var(--red)' : window._bac >= 0.05 ? 'var(--amber)' : 'var(--green)';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════════
+function showAuth(m) {
+  authMode = m || 'login'; syncAuth();
+  document.getElementById('authModal').classList.add('on');
+}
+function syncAuth() {
+  const r = authMode === 'register';
+  document.getElementById('authTitle').textContent = r ? 'CREATE DRIVER PROFILE' : 'DRIVER AUTHENTICATION';
+  document.getElementById('authSub').textContent   = r ? 'Register your biometric profile' : 'Sign in to your profile';
+  document.getElementById('authBtnT').textContent  = r ? 'CREATE PROFILE' : 'AUTHENTICATE';
+  document.getElementById('authSwT').textContent   = r ? 'Already registered?' : 'No profile?';
+  document.getElementById('authSwL').textContent   = r ? ' Sign in' : ' Create one';
+  document.getElementById('authErr').textContent   = '';
+}
+function toggleAuthMode() { authMode = authMode === 'login' ? 'register' : 'login'; syncAuth(); }
+
+async function submitAuth() {
+  const u = document.getElementById('authUser').value.trim();
+  const p = document.getElementById('authPass').value;
+  const e = document.getElementById('authErr');
+  e.textContent = '';
+  if (!u || !p) { e.textContent = 'Fill in all fields.'; return; }
+  const res  = await fetch(authMode === 'login' ? '/api/login' : '/api/register', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: u, password: p })
+  });
+  const data = await res.json();
+  if (!res.ok) { e.textContent = data.error || 'Error'; return; }
+  document.getElementById('authModal').classList.remove('on');
+
+  // Backend tells us where to go
+  if (data.redirect && data.redirect !== '/') {
+    window.location = data.redirect;
+    return;
+  }
+  onLoggedIn(data.username, data.has_baseline);
+}
+document.getElementById('authPass').addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
+
+function onLoggedIn(un, bl) {
+  isLoggedIn = true; hasBaseline = bl;
+  document.getElementById('tbUser').textContent = `USER: ${un.toUpperCase()}`;
+  document.getElementById('tbBase').textContent = `BASELINE: ${bl ? 'SET' : 'NOT SET'}`;
+  document.getElementById('tbBase').style.color = bl ? 'var(--green)' : 'var(--amber)';
+  document.getElementById('authBtn').textContent = 'LOGOUT';
+  document.getElementById('authBtn').onclick = doLogout;
+  document.getElementById('sysB').textContent = bl ? 'SET' : 'NOT SET';
+  document.getElementById('sysB').style.color = bl ? 'var(--green)' : 'var(--amber)';
+  sbLog(`DRIVER ${un.toUpperCase()} AUTHENTICATED`);
+}
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  isLoggedIn = false; hasBaseline = false;
+  document.getElementById('tbUser').textContent = 'USER: —';
+  document.getElementById('tbBase').textContent = 'BASELINE: —';
+  document.getElementById('tbBase').style.color = 'var(--amber-dim)';
+  document.getElementById('authBtn').textContent = 'LOGIN';
+  document.getElementById('authBtn').onclick = () => showAuth('login');
+  sbLog('DRIVER SIGNED OUT');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════════════════════════════
+async function startCamera() {
+  if (!isLoggedIn) { showAuth('login'); return; }
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+    vid.srcObject = s; vid.classList.add('on');
+    document.getElementById('camStart').style.display = 'none';
+    document.getElementById('camSt').textContent = 'ACTIVE';
+    document.getElementById('camSt').className = 'st ok';
+    document.getElementById('sbCam').textContent = 'CAM: ACTIVE';
+    camActive = true;
+    analyzeId = setInterval(captureAndAnalyze, 100);
+    sbLog('DRIVER CAM ENGAGED');
+  } catch(e) { sbLog('CAM ERROR: ' + e.message); }
+}
+
+// Offscreen canvas for frame capture — keeps the visible cvs free for landmark overlay
+const captureCanvas = document.createElement('canvas');
+const captureCtx    = captureCanvas.getContext('2d');
+
+let frameC = 0, fpsT = Date.now(), fps = 0;
+async function captureAndAnalyze() {
+  if (!vid.videoWidth) return;
+
+  // Capture into offscreen canvas — visible cvs is never written to here
+  captureCanvas.width  = vid.videoWidth;
+  captureCanvas.height = vid.videoHeight;
+  captureCtx.drawImage(vid, 0, 0);
+
+  // Keep visible canvas sized correctly
+  if (cvs.width !== vid.videoWidth || cvs.height !== vid.videoHeight) {
+    cvs.width  = vid.videoWidth;
+    cvs.height = vid.videoHeight;
+  }
+
+  frameC++; if (Date.now() - fpsT > 1000) { fps = frameC; frameC = 0; fpsT = Date.now(); }
+  document.getElementById('camFps').textContent = `${fps}fps`;
+  document.getElementById('camRes').textContent = `${vid.videoWidth}×${vid.videoHeight}`;
+  const img = captureCanvas.toDataURL('image/jpeg', .8);
+  try {
+    const res  = await fetch('/api/analyze', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: img })
+    });
+    if (res.status === 401) { document.getElementById('soberV').textContent = 'NOT LOGGED IN'; return; }
+    const d = await res.json();
+    updateSober(d);
+    drawLandmarks(d);
+    trackImpairment(d);
+  } catch(e) { document.getElementById('soberV').textContent = 'BACKEND OFFLINE'; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SOBERWATCH UI
+// ══════════════════════════════════════════════════════════════════
+const C = s => s < 25 ? 'var(--green)' : s < 50 ? 'var(--amber)' : s < 75 ? '#ff8800' : 'var(--red)';
+const V = s => s < 25 ? 'NOMINAL' : s < 50 ? 'MILD SIGNS' : s < 75 ? 'CAUTION — IMPAIRED' : 'WARNING — CRITICAL';
+
+function updateSober(d) {
+  const nm = document.getElementById('noFaceMsg');
+  if (!d.detected) {
+    nm.style.display = 'block';
+    document.getElementById('camFace').textContent = 'FACE: LOST';
+    return;
+  }
+  nm.style.display = 'none';
+  document.getElementById('camFace').textContent = 'FACE: LOCKED';
+  const s = d.overall, c = C(s), v = V(s);
+
+  document.getElementById('dialFill').style.strokeDashoffset = 283 - (283 * (s / 100));
+  document.getElementById('dialFill').style.stroke = c;
+  document.getElementById('dialN').textContent = s.toFixed(0);
+  document.getElementById('dialN').style.color = c;
+  document.getElementById('dialN').style.textShadow = `0 0 18px ${c}`;
+  document.getElementById('soberV').textContent = v; document.getElementById('soberV').style.color = c;
+  document.getElementById('soberBar').style.width = s + '%'; document.getElementById('soberBar').style.background = c;
+  document.getElementById('soberSt').textContent = s < 25 ? 'NOMINAL' : s < 50 ? 'CAUTION' : s < 75 ? 'WARNING' : 'CRITICAL';
+  document.getElementById('soberSt').className = 'st ' + (s < 25 ? 'ok' : s < 50 ? 'warn' : 'crit');
+
+  const sg = d.signals;
+  upM('eye',     sg.eye_droopiness.score);
+  upM('redness', sg.eye_redness.score);
+  upM('mouth',   sg.mouth_openness.score);
+  upM('tilt',    sg.head_tilt.score);
+  upM('sym',     sg.facial_symmetry.score);
+
+  // Show ML prediction label if available
+  if (d.ml_prediction) {
+    const ml = d.ml_prediction;
+    const mlC = ml.label === 'drunk' ? 'var(--red)' : 'var(--green)';
+    document.getElementById('soberV').textContent = `${V(s)} — ML: ${ml.label.toUpperCase()} (${ml.confidence.toFixed(0)}%)`;
+    document.getElementById('soberV').style.color = mlC;
+  }
+
+  if (d.speech && d.speech.overall != null) updateSpeechTile(d.speech);
+  if (prevOverall !== -1 && Math.abs(s - prevOverall) > 12) sbLog(`SOBERWATCH: ${v} (${s.toFixed(0)})`);
+  prevOverall = s;
+  lastFacialScore = s;
+}
+
+function upM(id, sc) {
+  const c = C(sc);
+  document.getElementById(`smv-${id}`).textContent = sc.toFixed(0);
+  document.getElementById(`smv-${id}`).style.color = c;
+  document.getElementById(`smb-${id}`).style.width = sc + '%';
+  document.getElementById(`smb-${id}`).style.background = c;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LANDMARK DEBUG OVERLAY
+// ══════════════════════════════════════════════════════════════════
+let showLandmarks = false;
+const ctx = cvs.getContext('2d');
+
+const LM_GROUPS = {
+  jaw:       { indices: [...Array(17).keys()],              color: 'rgba(100,130,200,0.7)' },
+  brows:     { indices: [...Array(10).keys()].map(i=>i+17), color: 'rgba(200,140,0,0.8)'   },
+  nose:      { indices: [...Array(9).keys()].map(i=>i+27),  color: 'rgba(0,140,80,0.8)'    },
+  right_eye: { indices: [...Array(6).keys()].map(i=>i+36),  color: 'rgba(26,127,212,1.0)'  },
+  left_eye:  { indices: [...Array(6).keys()].map(i=>i+42),  color: 'rgba(26,127,212,1.0)'  },
+  mouth:     { indices: [...Array(20).keys()].map(i=>i+48), color: 'rgba(200,60,60,0.8)'   },
+};
+
+function drawLandmarks(d) {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  if (!showLandmarks || !d || !d.landmarks || d.landmarks.length !== 68) return;
+
+  const pts = d.landmarks;
+  const W = cvs.width;
+  // Canvas is CSS-mirrored (scaleX(-1)), mirror X to match
+  const mx = x => W - x;
+
+  // Jaw contour line
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(80,120,255,0.9)';
+  ctx.lineWidth = 2;
+  pts.slice(0, 17).forEach(([x, y], i) =>
+    i === 0 ? ctx.moveTo(mx(x), y) : ctx.lineTo(mx(x), y));
+  ctx.stroke();
+
+  // Eye outlines
+  for (const ring of [[36,37,38,39,40,41,36],[42,43,44,45,46,47,42]]) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0,180,255,1.0)';
+    ctx.lineWidth = 2;
+    ring.forEach((i, j) => {
+      const [x, y] = pts[i];
+      j === 0 ? ctx.moveTo(mx(x), y) : ctx.lineTo(mx(x), y);
+    });
+    ctx.stroke();
+  }
+
+  // All 68 dots
+  for (const { indices, color } of Object.values(LM_GROUPS)) {
+    ctx.fillStyle = color;
+    for (const i of indices) {
+      const [x, y] = pts[i];
+      ctx.beginPath();
+      ctx.arc(mx(x), y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mx(x), y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+  }
+
+  // Tilt line between landmarks 0 and 16
+  const [lx, ly] = pts[0], [rx, ry] = pts[16];
+  const tiltScore = d.signals?.head_tilt?.score ?? 0;
+  const tiltDeg   = d.signals?.head_tilt?.raw_tilt_deg ?? 0;
+  const tiltColor = tiltScore < 25 ? 'rgba(13,158,106,0.9)' : tiltScore < 50 ? 'rgba(200,120,0,0.9)' : 'rgba(210,40,40,0.9)';
+
+  ctx.beginPath();
+  ctx.strokeStyle = tiltColor;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([5, 4]);
+  ctx.moveTo(mx(lx), ly);
+  ctx.lineTo(mx(rx), ry);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tilt anchor dots (larger, labelled)
+  for (const [i, label] of [[0,'L0'],[16,'R16']]) {
+    const [x, y] = pts[i];
+    ctx.beginPath();
+    ctx.arc(mx(x), y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = tiltColor;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#1a2030';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText(label, mx(x) + 7, y + 3);
+  }
+
+  // Tilt angle + score readout above the line
+  const midX = mx((lx + rx) / 2), midY = (ly + ry) / 2 - 12;
+  ctx.fillStyle = tiltColor;
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(`TILT ${tiltDeg.toFixed(1)}°  SCORE ${tiltScore.toFixed(0)}`, midX - 60, midY);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SUSTAINED IMPAIRMENT TRACKER
+// Triggers speech test only after SUSTAINED_SECS consecutive seconds
+// above IMPAIR_THRESHOLD — prevents false positives from momentary spikes
+// ══════════════════════════════════════════════════════════════════
+function trackImpairment(d) {
+  if (!d.detected || impairTestOpen || Date.now() < impairCooldownUntil) {
+    // If score drops, reset the sustained timer and clear the bar
+    if (!d.detected || d.overall < IMPAIR_THRESHOLD) {
+      impairHighStart = null;
+      clearImpairBar();
+    }
+    return;
+  }
+
+  if (d.overall >= IMPAIR_THRESHOLD) {
+    if (!impairHighStart) {
+      impairHighStart = Date.now();
+      startImpairBar(); // begin filling the countdown bar
+      sbLog(`⚠ Impairment ${d.overall.toFixed(0)} — monitoring for ${SUSTAINED_SECS}s...`);
+    }
+    const sustained = (Date.now() - impairHighStart) / 1000;
+    if (sustained >= SUSTAINED_SECS) {
+      impairHighStart = null;
+      clearImpairBar();
+      openSpeechTest(false, d.overall);
+    }
+  } else {
+    // Dropped below threshold — reset
+    impairHighStart = null;
+    clearImpairBar();
+  }
+}
+
+function startImpairBar() {
+  const fill = document.getElementById('impairBarFill');
+  // Reset to 0 first (no transition), then animate to 100% over SUSTAINED_SECS
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+  // Force reflow so the reset takes effect before we set the transition
+  fill.getBoundingClientRect();
+  fill.style.transition = `width ${SUSTAINED_SECS}s linear`;
+  fill.style.width = '100%';
+}
+
+function clearImpairBar() {
+  const fill = document.getElementById('impairBarFill');
+  fill.style.transition = 'width 0.3s ease';
+  fill.style.width = '0%';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPEECH TEST POPUP
+// ══════════════════════════════════════════════════════════════════
+function openSpeechTest(manual = false, facialScore = null) {
+  if (!speechReady || !hasSpeechBase) {
+    // No speech baseline — just log, don't block
+    sbLog(manual ? 'Speech baseline not set — complete setup first' : `⚠ Impairment detected (score: ${facialScore?.toFixed(0)}) — no speech baseline`);
+    return;
+  }
+
+  impairTestOpen = true;
+  document.getElementById('tbAlert').style.display = '';
+
+  // Pick a random sentence
+  curTestSentenceIdx = Math.floor(Math.random() * sentences.length);
+  document.getElementById('impairSentence').textContent = sentences[curTestSentenceIdx];
+  document.getElementById('impairScoreBadge').textContent = facialScore ? facialScore.toFixed(0) : '—';
+
+  // Reset state
+  document.getElementById('impairResults').classList.remove('on');
+  document.getElementById('impairPrompt').style.display = '';
+  document.getElementById('impairTranscript').textContent = '';
+  document.getElementById('impairMicLbl').textContent = 'PRESS MICROPHONE TO BEGIN RECORDING';
+  document.getElementById('impairMic').classList.remove('rec');
+  document.getElementById('impairConfirmBtn').style.display = 'none';
+  document.getElementById('impairCooldownNote').textContent = `Test will not repeat for ${COOLDOWN_MINS} minutes after dismissal.`;
+
+  // Pause face analysis while speech test is open to avoid interference
+  clearInterval(analyzeId);
+
+  document.getElementById('impairOverlay').classList.add('on');
+  sbLog('SPEECH TEST INITIATED — reading required');
+}
+
+function dismissImpairTest() {
+  document.getElementById('impairOverlay').classList.remove('on');
+  document.getElementById('tbAlert').style.display = 'none';
+  impairTestOpen = false;
+  impairCooldownUntil = Date.now() + COOLDOWN_MINS * 60 * 1000;
+  // Resume face analysis
+  if (camActive) analyzeId = setInterval(captureAndAnalyze, 100);
+  sbLog(`Speech test dismissed — cooldown ${COOLDOWN_MINS} min`);
+}
+
+// ── Mic recording for impairment test ────────────────────────────
+async function toggleImpairMic() {
+  if (!testRecording) await startImpairRec();
+  else                await stopImpairRec();
+}
+
+async function startImpairRec() {
+  testChunks = [];
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRec = new MediaRecorder(s);
+    mediaRec.ondataavailable = e => { if (e.data.size > 0) testChunks.push(e.data); };
+    mediaRec.start();
+    testRecording = true;
+    document.getElementById('impairMic').classList.add('rec');
+    document.getElementById('impairMicLbl').textContent = 'RECORDING — TAP TO STOP WHEN DONE';
+  } catch(e) {
+    document.getElementById('impairMicLbl').textContent = 'MICROPHONE ACCESS DENIED';
+  }
+}
+
+async function stopImpairRec() {
+  if (!mediaRec) return;
+  mediaRec.stop(); mediaRec.stream.getTracks().forEach(t => t.stop());
+  testRecording = false;
+  document.getElementById('impairMic').classList.remove('rec');
+  document.getElementById('impairMicLbl').textContent = 'ANALYSING SPEECH...';
+  await new Promise(r => setTimeout(r, 350));
+  const b64 = await blobToB64(new Blob(testChunks, { type: 'audio/webm' }));
+  await submitImpairSpeech(b64);
+}
+
+function blobToB64(blob) {
+  return new Promise((r, j) => {
+    const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = j; fr.readAsDataURL(blob);
+  });
+}
+
+async function submitImpairSpeech(b64) {
+  const res  = await fetch('/api/speech/test', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ audio: b64, sentence_idx: curTestSentenceIdx })
+  });
+  const data = await res.json();
+
+  if (!data.success) {
+    document.getElementById('impairMicLbl').textContent = 'ERROR — ' + (data.error || 'try again');
+    return;
+  }
+
+  const sc = data.scores;
+
+  // Show transcript
+  document.getElementById('impairTranscript').textContent = `"${sc.transcription}"`;
+  document.getElementById('impairMicLbl').textContent = 'ANALYSIS COMPLETE';
+
+  // Fill in results
+  document.getElementById('irSlur').textContent  = sc.slur_score.toFixed(0);
+  document.getElementById('irPace').textContent  = sc.pace_score.toFixed(0);
+  document.getElementById('irPause').textContent = sc.pause_score.toFixed(0);
+  document.getElementById('irSlur').style.color  = C(sc.slur_score);
+  document.getElementById('irPace').style.color  = C(sc.pace_score);
+  document.getElementById('irPause').style.color = C(sc.pause_score);
+
+  // Combined score (facial + speech)
+  const combined = lastFacialScore * 0.7 + sc.overall * 0.3;
+  document.getElementById('irOverall').textContent = combined.toFixed(0);
+  document.getElementById('irOverall').style.color = C(combined);
+  document.getElementById('irVerdict').textContent = V(combined);
+  document.getElementById('irVerdict').style.color = C(combined);
+
+  // Comparison line
+  const speechDelta = sc.overall - sc.baseline_wpm; // proxy comparison
+  const compText = sc.overall < 30
+    ? `Speech pattern consistent with your sober baseline (WPM: ${sc.live_wpm} vs baseline ${sc.baseline_wpm})`
+    : `Speech shows deviation from your sober baseline — WPM ${sc.live_wpm} vs sober ${sc.baseline_wpm}`;
+  document.getElementById('irCompLabel').textContent = compText;
+  document.getElementById('irCompVal').textContent   = `SPEECH: ${sc.overall.toFixed(0)}`;
+  document.getElementById('irCompVal').style.color   = C(sc.overall);
+
+  // Show results panel
+  document.getElementById('impairResults').classList.add('on');
+  document.getElementById('impairConfirmBtn').style.display = '';
+
+  // Update speech tile in background
+  updateSpeechTile(sc);
+
+  // Cache on backend
+  await fetch('/api/speech/submit_score', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sc)
+  });
+
+  sbLog(`SPEECH TEST: combined ${combined.toFixed(0)} | slur ${sc.slur_score.toFixed(0)} | pace ${sc.pace_score.toFixed(0)}`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPEECH TILE (background display of last result)
+// ══════════════════════════════════════════════════════════════════
+function updateSpeechTile(sc) {
+  const c = C(sc.overall);
+  document.getElementById('speechND').style.display = 'none';
+  document.getElementById('speechScores').classList.add('on');
+  document.getElementById('speechOA').classList.add('on');
+  document.getElementById('speechON').textContent = sc.overall.toFixed(0);
+  document.getElementById('speechON').style.color = c;
+  setScBar('slur', sc.slur_score); setScBar('pace', sc.pace_score); setScBar('pause', sc.pause_score);
+  document.getElementById('speechTL').textContent = sc.transcription ? `"${sc.transcription}"` : '';
+  document.getElementById('speechSt').textContent = 'ANALYZED';
+  document.getElementById('speechSt').className = 'st ' + (sc.overall < 40 ? 'ok' : 'warn');
+  document.getElementById('tbSpeech').textContent = `SPEECH: ${sc.overall.toFixed(0)}`;
+}
+
+function setScBar(id, v) {
+  const c = C(v);
+  document.getElementById(`sbf-${id}`).style.width = v + '%'; document.getElementById(`sbf-${id}`).style.background = c;
+  document.getElementById(`sv-${id}`).textContent  = v.toFixed(0); document.getElementById(`sv-${id}`).style.color = c;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATUS BAR
+// ══════════════════════════════════════════════════════════════════
+function sbLog(m) { document.getElementById('sbLog').textContent = m; }
+
+// ══════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════
+async function init() {
+  // Check session
+  const res  = await fetch('/api/me', { credentials: 'include' });
+  const data = await res.json();
+  if (!data.logged_in) {
+    showAuth('login');
+  } else {
+    // If no baseline, redirect to setup
+    if (!data.has_baseline) { window.location = '/setup'; return; }
+    onLoggedIn(data.username, data.has_baseline);
+  }
+
+  // Speech availability
+  const av = await fetch('/api/speech/availability').then(r => r.json());
+  speechReady = av.ready;
+  document.getElementById('sysW').textContent = av.whisper ? 'READY' : 'OFFLINE';
+  document.getElementById('sysW').style.color = av.whisper ? 'var(--green)' : 'var(--amber)';
+  document.getElementById('sbSpch').textContent = 'SPEECH: ' + (av.ready ? 'READY' : 'OFFLINE');
+  if (speechReady) {
+    const sr = await fetch('/api/speech/sentences').then(r => r.json());
+    sentences = sr.sentences;
+    // Check if user has speech baseline
+    const me = await fetch('/api/me', { credentials: 'include' }).then(r => r.json());
+    hasSpeechBase = me.baseline && me.baseline.speech != null;
+  }
+
+  // Clock + instruments
+  tickClock(); setInterval(tickClock, 1000);
+  initECG(); simHR();
+  sbLog('SOBER-DRIVE SYSTEMS ONLINE — ENGAGE CAMERA TO BEGIN MONITORING');
+}
+
+init();
+</script>
+</body>
+</html>
