@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Driver Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#ffffff; --panel:#f4f6f9; --panel2:#e8ecf2;
+  --bezel:#c8d0dc; --bezel2:#b0bac8;
+  --amber:#1a7fd4; --amber-dim:#5a9fd4; --amber-glow:#1a7fd4;
+  --green:#0d9e6a; --green-dim:#a0d4bc;
+  --red:#d93030; --text:#1a2030; --text-dim:#5a6a80;
+  --fo:'Orbitron',monospace; --fr:'Rajdhani',sans-serif; --fm:'Share Tech Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:var(--void);color:var(--text);font-family:var(--fm);overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+body::after{content:'';position:fixed;inset:0;z-index:9001;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(200,208,220,0.3) 100%);}
+
+/* Grid bg */
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(77,181,255,0.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(77,181,255,0.05) 1px,transparent 1px);
+  background-size:40px 40px;}
+
+/* ── SHELL ── */
+.shell{position:relative;z-index:1;width:100vw;height:100vh;display:flex;flex-direction:column;}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;
+  border-bottom:1px solid var(--bezel2);background:var(--panel);position:relative;flex-shrink:0;}
+header::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),var(--amber-dim),var(--amber),transparent);opacity:.5;}
+.logo{font-family:var(--fo);font-weight:900;font-size:.9rem;letter-spacing:.3em;color:var(--amber);text-shadow:0 0 12px rgba(77,181,255,.6);}
+.logo span{color:var(--text-dim);font-weight:400;}
+.hdr-right{font-size:.6rem;letter-spacing:.14em;color:var(--text-dim);display:flex;align-items:center;gap:1rem;}
+.hdr-user{color:var(--amber-dim);}
+
+/* ── MAIN CONTENT ── */
+.content{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1rem;}
+
+/* ── STEPPER ── */
+.stepper{display:flex;align-items:center;gap:0;margin-bottom:2rem;}
+.step-item{display:flex;align-items:center;gap:.6rem;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;}
+.step-num{width:26px;height:26px;border-radius:50%;border:1px solid var(--bezel2);display:flex;align-items:center;justify-content:center;font-family:var(--fo);font-size:.55rem;color:var(--text-dim);flex-shrink:0;transition:all .3s;}
+.step-num.active{border-color:var(--amber);color:var(--amber);box-shadow:0 0 10px rgba(77,181,255,.3);}
+.step-num.done{border-color:var(--green);color:var(--green);background:rgba(57,255,106,.08);}
+.step-label{color:var(--text-dim);transition:color .3s;}
+.step-label.active{color:var(--amber);}
+.step-label.done{color:var(--green);}
+.step-line{width:50px;height:1px;background:var(--bezel2);margin:0 .5rem;flex-shrink:0;}
+.step-line.done{background:var(--green);}
+
+/* ── PANEL BASE ── */
+.setup-panel{background:var(--panel);border:1px solid var(--bezel2);width:min(820px,96vw);position:relative;display:flex;flex-direction:column;}
+.setup-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);}
+.panel-header{padding:1.4rem 2rem 0;border-bottom:1px solid var(--bezel2);padding-bottom:1rem;}
+.panel-step-tag{font-size:.52rem;letter-spacing:.2em;color:var(--amber-dim);margin-bottom:.3rem;}
+.panel-title{font-family:var(--fo);font-weight:900;font-size:1rem;letter-spacing:.2em;color:var(--amber);text-shadow:0 0 14px rgba(77,181,255,.5);}
+.panel-sub{font-size:.62rem;letter-spacing:.08em;color:var(--text-dim);margin-top:.3rem;line-height:1.8;}
+
+/* ── STEP 1: FACIAL BASELINE ── */
+#step1Body{display:flex;gap:0;flex:1;overflow:hidden;}
+
+.cam-col{flex:0 0 320px;position:relative;background:var(--panel2);border-right:1px solid var(--bezel2);}
+.cam-col video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0;transition:opacity .6s;}
+.cam-col video.on{opacity:1;}
+.cam-col canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;}
+.cam-hud{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.reticle{width:110px;height:80px;border:1px solid rgba(77,181,255,.4);position:relative;}
+.reticle::before{content:'';position:absolute;top:-5px;left:-5px;width:12px;height:12px;border-top:2px solid var(--amber);border-left:2px solid var(--amber);}
+.reticle::after{content:'';position:absolute;bottom:-5px;right:-5px;width:12px;height:12px;border-bottom:2px solid var(--amber);border-right:2px solid var(--amber);}
+.cam-scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(77,181,255,.6),transparent);animation:scan 3.5s ease-in-out infinite;opacity:0;}
+@keyframes scan{0%{top:0;opacity:0}5%{opacity:.7}95%{opacity:.5}100%{top:100%;opacity:0}}
+.cam-face-status{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:.55rem;letter-spacing:.12em;color:var(--text-dim);}
+
+/* ── ALIGNMENT CROSSHAIR ── */
+.crosshair{position:absolute;inset:0;pointer-events:none;z-index:2;}
+.crosshair::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 5%,rgba(77,181,255,.45) 20%,rgba(77,181,255,.45) 80%,transparent 95%);
+  transform:translateY(-50%);}
+.crosshair::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent 5%,rgba(77,181,255,.45) 20%,rgba(77,181,255,.45) 80%,transparent 95%);
+  transform:translateX(-50%);}
+.crosshair-dot{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;
+  background:rgba(77,181,255,.8);transform:translate(-50%,-50%);box-shadow:0 0 6px rgba(77,181,255,.6);}
+.crosshair-nose{position:absolute;top:50%;left:50%;width:18px;height:18px;
+  border:1px solid rgba(77,181,255,.55);transform:translate(-50%,-50%);}
+.align-label{position:absolute;top:52%;left:50%;transform:translateX(-50%);
+  font-size:.48rem;letter-spacing:.14em;color:#e6edf7;white-space:nowrap;margin-top:6px;
+  text-shadow:0 0 6px rgba(0,0,0,.9);background:rgba(0,0,0,.45);padding:.1rem .4rem;}
+.tilt-bar-wrap{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  width:120px;height:14px;display:flex;align-items:center;gap:4px;}
+.tilt-track{flex:1;height:3px;background:rgba(255,255,255,.15);position:relative;}
+.tilt-centre{position:absolute;left:50%;top:50%;width:1px;height:7px;background:rgba(77,181,255,.7);transform:translate(-50%,-50%);}
+.tilt-needle{position:absolute;top:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--amber);transform:translate(-50%,-50%);transition:left .15s;box-shadow:0 0 5px var(--amber);}
+.tilt-lbl{font-size:.48rem;letter-spacing:.1em;color:#e6edf7;white-space:nowrap;text-shadow:0 0 4px rgba(0,0,0,.8);}
+.cam-no-access{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;background:rgba(6,7,9,.9);}
+.cam-no-access-msg{font-size:.6rem;letter-spacing:.12em;color:var(--text-dim);text-align:center;}
+
+.facial-col{flex:1;padding:1.4rem 1.6rem;display:flex;flex-direction:column;justify-content:space-between;}
+
+/* Countdown ring */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:.6rem;}
+.ring{position:relative;width:100px;height:100px;}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg);}
+.ring-track{fill:none;stroke:var(--bezel2);stroke-width:6;}
+.ring-fill{fill:none;stroke:var(--amber);stroke-width:6;stroke-linecap:butt;stroke-dasharray:283;stroke-dashoffset:283;transition:stroke-dashoffset .3s;}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-n{font-family:var(--fo);font-weight:900;font-size:1.7rem;color:var(--amber);}
+.ring-lbl{font-size:.46rem;letter-spacing:.15em;color:var(--text-dim);}
+.ring-frm{font-size:.55rem;letter-spacing:.12em;color:var(--text-dim);}
+
+/* Checklist */
+.checklist{display:flex;flex-direction:column;gap:.5rem;}
+.check-item{display:flex;align-items:center;gap:.65rem;font-size:.6rem;letter-spacing:.08em;color:var(--text-dim);}
+.check-icon{width:16px;height:16px;border-radius:50%;border:1px solid var(--bezel2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;transition:all .3s;}
+.check-icon.ok{border-color:var(--green);color:var(--green);background:rgba(57,255,106,.1);}
+
+/* Live metric readouts */
+.live-metrics{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.6rem 0;}
+.lm-box{background:var(--panel2);border:1px solid var(--bezel2);padding:.7rem .8rem;position:relative;overflow:hidden;}
+.lm-box::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;}
+.lm-box.tilt::before{background:var(--amber);}
+.lm-box.mouth::before{background:var(--green);}
+.lm-lbl{font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.3rem;}
+.lm-val{font-family:var(--fo);font-weight:900;font-size:1.6rem;line-height:1;transition:color .3s;}
+.lm-unit{font-size:.52rem;letter-spacing:.1em;color:var(--text-dim);margin-left:.2rem;}
+.lm-bar{height:3px;background:var(--bezel2);margin-top:.5rem;overflow:hidden;}
+.lm-bar-fill{height:100%;width:0%;transition:width .3s,background .3s;}
+.facial-status.good{color:var(--green);}
+.facial-status.warn{color:var(--amber);}
+
+.action-btn{font-family:var(--fo);font-weight:700;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+  background:var(--amber);color:var(--void);border:none;padding:.75rem 2rem;cursor:pointer;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:background .2s;align-self:flex-start;}
+.action-btn:hover{background:var(--amber-glow);}
+.action-btn:disabled{background:var(--bezel2);color:var(--text-dim);cursor:not-allowed;}
+
+/* ── STEP 2: SPEECH BASELINE ── */
+#step2Body{display:none;flex:1;overflow:hidden;flex-direction:column;}
+#step2Body.on{display:flex;}
+
+.speech-setup{padding:1.4rem 2rem;display:flex;gap:1.8rem;flex:1;}
+.speech-left{flex:1;display:flex;flex-direction:column;gap:1rem;}
+.speech-right{flex:0 0 200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+
+.sentence-display{background:var(--panel2);border:1px solid var(--bezel2);border-left:3px solid var(--amber);
+  padding:1rem 1.2rem;font-family:var(--fr);font-size:1.05rem;font-weight:600;color:var(--text);line-height:1.7;}
+.sentence-num{font-size:.55rem;letter-spacing:.2em;color:var(--amber-dim);margin-bottom:.4rem;}
+
+.speech-instruction{font-size:.62rem;letter-spacing:.08em;color:var(--text-dim);line-height:1.9;}
+
+/* Progress dots */
+.speech-dots{display:flex;gap:.5rem;align-items:center;}
+.s-dot{width:9px;height:9px;border-radius:50%;background:var(--bezel2);transition:all .3s;}
+.s-dot.active{background:var(--amber);box-shadow:0 0 8px rgba(232,160,32,.5);}
+.s-dot.done{background:var(--green);}
+
+/* Mic button */
+.mic-btn{width:72px;height:72px;border-radius:50%;background:transparent;
+  border:2px solid var(--amber);color:var(--amber);font-size:1.6rem;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;position:relative;}
+.mic-btn:hover{background:rgba(232,160,32,.1);}
+.mic-btn.rec{border-color:var(--red);color:var(--red);animation:micPulse 1s ease-in-out infinite;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,48,48,.4)}50%{box-shadow:0 0 0 10px rgba(255,48,48,0)}}
+.mic-lbl{font-size:.58rem;letter-spacing:.12em;color:var(--text-dim);text-align:center;}
+
+/* Transcript preview */
+.transcript-prev{font-size:.62rem;font-style:italic;color:var(--text-dim);min-height:1.4em;line-height:1.6;}
+.transcript-prev.good{color:var(--green);}
+
+/* Results list */
+.speech-results{display:flex;flex-direction:column;gap:.35rem;}
+.sr-item{display:flex;align-items:center;gap:.7rem;font-size:.6rem;}
+.sr-idx{color:var(--amber-dim);font-family:var(--fo);font-size:.52rem;width:20px;flex-shrink:0;}
+.sr-txt{flex:1;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sr-wpm{color:var(--green);font-family:var(--fo);font-size:.6rem;flex-shrink:0;}
+
+/* Panel footer */
+.panel-footer{padding:.9rem 2rem;border-top:1px solid var(--bezel2);display:flex;align-items:center;justify-content:space-between;}
+.footer-hint{font-size:.57rem;letter-spacing:.1em;color:var(--text-dim);}
+.footer-skip{font-size:.55rem;letter-spacing:.1em;color:var(--text-dim);background:none;border:none;cursor:pointer;}
+.footer-skip:hover{color:var(--amber);}
+
+/* ── STEP 3: COMPLETE ── */
+#step3Body{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;padding:2rem;}
+#step3Body.on{display:flex;}
+.complete-icon{font-size:3rem;animation:popIn .5s ease;}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.complete-title{font-family:var(--fo);font-weight:900;font-size:1.1rem;letter-spacing:.25em;color:var(--green);text-shadow:0 0 20px var(--green);}
+.complete-sub{font-size:.65rem;letter-spacing:.1em;color:var(--text-dim);text-align:center;max-width:380px;line-height:1.9;}
+.complete-stats{display:flex;gap:1.2rem;}
+.cstat{background:var(--panel2);border:1px solid var(--bezel2);padding:.7rem 1.2rem;text-align:center;}
+.cstat-val{font-family:var(--fo);font-size:1.1rem;color:var(--green);}
+.cstat-lbl{font-size:.5rem;letter-spacing:.12em;color:var(--text-dim);margin-top:.2rem;}
+.launch-btn{font-family:var(--fo);font-weight:900;font-size:.8rem;letter-spacing:.25em;text-transform:uppercase;
+  background:var(--green);color:var(--void);border:none;padding:.9rem 3rem;cursor:pointer;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+  animation:greenPulse 2s ease-in-out infinite;}
+@keyframes greenPulse{0%,100%{box-shadow:0 0 0 0 rgba(57,255,106,.4)}50%{box-shadow:0 0 20px 4px rgba(57,255,106,.2)}}
+
+/* Status bar */
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:0 2rem;
+  border-top:1px solid var(--bezel2);background:var(--panel);font-size:.55rem;
+  letter-spacing:.14em;color:var(--text-dim);height:40px;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="shell">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">NEXUS <span>/ DRIVER SETUP</span></div>
+    <div class="hdr-right">
+      <span class="hdr-user" id="hdrUser">LOADING...</span>
+      <span>INITIAL CALIBRATION REQUIRED</span>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <div class="content">
+    <div class="setup-panel">
+
+      <!-- Top stepper -->
+      <div style="padding:1rem 2rem 0;">
+        <div class="stepper">
+          <div class="step-item">
+            <div class="step-num active" id="stepNum1">1</div>
+            <div class="step-label active" id="stepLbl1">FACIAL BASELINE</div>
+          </div>
+          <div class="step-line" id="stepLine1"></div>
+          <div class="step-item">
+            <div class="step-num" id="stepNum2">2</div>
+            <div class="step-label" id="stepLbl2">SPEECH BASELINE</div>
+          </div>
+          <div class="step-line" id="stepLine2"></div>
+          <div class="step-item">
+            <div class="step-num" id="stepNum3">3</div>
+            <div class="step-label" id="stepLbl3">COMPLETE</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ STEP 1: FACIAL ══ -->
+      <div id="step1">
+        <div class="panel-header">
+          <div class="panel-step-tag">STEP 1 OF 2 — BIOMETRIC CAPTURE</div>
+          <div class="panel-title">FACIAL BASELINE RECORDING</div>
+          <div class="panel-sub">Sit comfortably, face the camera directly and relax. The system will record your sober facial metrics for 10 seconds — this becomes your personal benchmark for impairment detection.</div>
+        </div>
+        <div id="step1Body">
+
+          <!-- Camera feed -->
+          <div class="cam-col">
+            <video id="setupVid" autoplay playsinline muted></video>
+            <canvas id="setupCvs"></canvas>
+            <div class="cam-hud"><div class="reticle"></div></div>
+            <div class="cam-scan"></div>
+            <!-- Alignment crosshair -->
+            <div class="crosshair">
+              <div class="crosshair-dot"></div>
+              <div class="crosshair-nose"></div>
+              <div class="align-label">ALIGN NOSE TO CENTRE</div>
+            </div>
+            <!-- Real-time tilt indicator -->
+            <div class="tilt-bar-wrap">
+              <span class="tilt-lbl" id="tiltLblL">L</span>
+              <div class="tilt-track">
+                <div class="tilt-centre"></div>
+                <div class="tilt-needle" id="tiltNeedle" style="left:50%"></div>
+              </div>
+              <span class="tilt-lbl" id="tiltLblR">R</span>
+              <span class="tilt-lbl" id="tiltDeg" style="margin-left:4px;color:#e6edf7;">0.0°</span>
+            </div>
+            <div class="cam-face-status" id="faceStatus">AWAITING CAMERA</div>
+            <div class="cam-no-access" id="camNoAccess">
+              <span style="font-size:1.5rem">📷</span>
+              <div class="cam-no-access-msg">Camera access needed<br>for facial baseline</div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="facial-col">
+
+            <div class="checklist">
+              <div class="check-item">
+                <div class="check-icon" id="chk-cam">○</div>
+                <span>Camera feed active</span>
+              </div>
+              <div class="check-item">
+                <div class="check-icon" id="chk-face">○</div>
+                <span>Face clearly visible in frame</span>
+              </div>
+              <div class="check-item">
+                <div class="check-icon" id="chk-light">○</div>
+                <span>Good lighting on face</span>
+              </div>
+            </div>
+
+            <!-- Live metric readouts -->
+            <div class="live-metrics">
+              <div class="lm-box tilt">
+                <div class="lm-lbl">HEAD TILT</div>
+                <div class="lm-val" id="lmTiltVal" style="color:var(--text-dim);">—<span class="lm-unit">°</span></div>
+                <div class="lm-bar"><div class="lm-bar-fill" id="lmTiltBar"></div></div>
+              </div>
+              <div class="lm-box mouth">
+                <div class="lm-lbl">MOUTH OPEN</div>
+                <div class="lm-val" id="lmMouthVal" style="color:var(--text-dim);">—<span class="lm-unit">ratio</span></div>
+                <div class="lm-bar"><div class="lm-bar-fill" id="lmMouthBar"></div></div>
+              </div>
+            </div>
+
+            <!-- Ring + countdown -->
+            <div class="ring-wrap" id="ringWrap" style="display:none;">
+              <div class="ring">
+                <svg viewBox="0 0 100 100" width="100" height="100">
+                  <circle class="ring-track" cx="50" cy="50" r="45"/>
+                  <circle class="ring-fill" cx="50" cy="50" r="45" id="ringFill"/>
+                </svg>
+                <div class="ring-center">
+                  <div class="ring-n" id="ringN">10</div>
+                  <div class="ring-lbl">SEC</div>
+                </div>
+              </div>
+              <div class="ring-frm" id="ringFrames">FRAMES: 0</div>
+            </div>
+
+            <div>
+              <div class="facial-status" id="facialStatus">Ready when you are.</div>
+              <div style="height:.8rem;"></div>
+              <button class="action-btn" id="startFacialBtn" onclick="beginFacialCal()" disabled>
+                ▶ BEGIN FACIAL CAPTURE
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /step1Body -->
+      </div><!-- /step1 -->
+
+      <!-- ══ STEP 2: SPEECH ══ -->
+      <div id="step2" style="display:none;flex:1;flex-direction:column;">
+        <div class="panel-header">
+          <div class="panel-step-tag">STEP 2 OF 2 — VOICE ANALYSIS</div>
+          <div class="panel-title">SPEECH BASELINE RECORDING</div>
+          <div class="panel-sub">Read each sentence clearly at a natural pace. This records your sober speech pattern — pace, clarity, and pauses — for comparison during live monitoring.</div>
+        </div>
+        <div id="step2Body" class="speech-setup">
+          <div class="speech-left">
+            <div>
+              <div class="sentence-num" id="sentNum">SENTENCE 1 OF 3</div>
+              <div class="sentence-display" id="sentDisplay">Loading sentences...</div>
+            </div>
+            <div class="speech-instruction">
+              Press the mic button → read the sentence clearly → press again to stop.<br>
+              Speak at your normal pace. Background noise is okay.
+            </div>
+            <div class="transcript-prev" id="speechTranscript">Transcript will appear here after recording...</div>
+            <div class="speech-results" id="speechResultsList"></div>
+          </div>
+          <div class="speech-right">
+            <div class="speech-dots" id="speechDots"></div>
+            <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+            <div class="mic-lbl" id="micLbl">TAP TO RECORD</div>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <div class="footer-hint" id="speechFooterHint">Record all 3 sentences to complete your baseline.</div>
+          <button class="footer-skip" onclick="skipSpeech()">skip speech baseline →</button>
+        </div>
+      </div><!-- /step2 -->
+
+      <!-- ══ STEP 3: COMPLETE ══ -->
+      <div id="step3">
+        <div id="step3Body">
+          <div class="complete-icon">✓</div>
+          <div class="complete-title">CALIBRATION COMPLETE</div>
+          <div class="complete-sub">Your biometric baseline has been saved. The system will now use your personal measurements for accurate impairment detection.</div>
+          <div class="complete-stats">
+            <div class="cstat"><div class="cstat-val" id="cstatEar">—</div><div class="cstat-lbl">BASELINE EAR</div></div>
+            <div class="cstat"><div class="cstat-val" id="cstatRedness">—</div><div class="cstat-lbl">EYE REDNESS</div></div>
+            <div class="cstat"><div class="cstat-val" id="cstatTilt">—</div><div class="cstat-lbl">HEAD TILT °</div></div>
+            <div class="cstat"><div class="cstat-val" id="cstatWpm">—</div><div class="cstat-lbl">SPEECH WPM</div></div>
+            <div class="cstat"><div class="cstat-val" id="cstatFrames">—</div><div class="cstat-lbl">FACE FRAMES</div></div>
+          </div>
+          <button class="launch-btn" onclick="launchDashboard()">▶ LAUNCH DASHBOARD</button>
+        </div>
+      </div><!-- /step3 -->
+
+    </div><!-- /setup-panel -->
+  </div><!-- /content -->
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <span>NEXUS EV PLATFORM — SETUP MODE</span>
+    <span id="sbMsg">Initialising systems...</span>
+    <span>BUILD 2.4.0</span>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let username     = '';
+let sentences    = [];
+let speechReady  = false;
+let camStream    = null;
+let facialDone   = false;
+let speechDone   = false;
+let facialBaseline = null;
+let speechBaseline = null;
+
+// Calibration
+let calId        = null;
+let calStart     = null;
+const CAL_DUR    = 10000;
+
+// Speech
+let calSpeechIdx = 0;
+let isRecording  = false;
+let mediaRec     = null;
+let recChunks    = [];
+
+const vid = document.getElementById('setupVid');
+const cvs = document.getElementById('setupCvs');
+const ctx = cvs.getContext('2d');
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+async function init() {
+  const res  = await fetch('/api/me', { credentials: 'include' });
+  const data = await res.json();
+  if (!data.logged_in) { window.location = '/'; return; }
+  username = data.username;
+  document.getElementById('hdrUser').textContent = `DRIVER: ${username.toUpperCase()}`;
+  sbMsg(`Welcome ${username.toUpperCase()} — facial calibration required`);
+
+  // Get speech info
+  const av = await fetch('/api/speech/availability').then(r => r.json());
+  speechReady = av.ready;
+  if (speechReady) {
+    const sr = await fetch('/api/speech/sentences').then(r => r.json());
+    sentences = sr.sentences;
+  }
+
+  // Auto-start camera
+  await startCam();
+}
+
+// ── Camera ──────────────────────────────────────────────────────────────────
+async function startCam() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+    vid.srcObject = camStream;
+    vid.classList.add('on');
+    document.getElementById('camNoAccess').style.display = 'none';
+    setCheck('chk-cam', true);
+    sbMsg('Camera active — position your face in the frame');
+    // Start face-detection polling to confirm face visible
+    monitorFace();
+  } catch(e) {
+    sbMsg('Camera access denied — please allow camera permissions and reload');
+    document.getElementById('facialStatus').textContent = 'Camera access denied.';
+    document.getElementById('facialStatus').className = 'facial-status warn';
+  }
+}
+
+let faceMonitorId = null;
+let faceFrameCount = 0;
+async function monitorFace() {
+  // Poll every 400ms, just to update the checklist — not the full analysis
+  faceMonitorId = setInterval(async () => {
+    if (!vid.videoWidth) return;
+    cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+    ctx.drawImage(vid, 0, 0);
+    const img = cvs.toDataURL('image/jpeg', 0.6);
+    try {
+      const res  = await fetch('/api/analyze', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: img })
+      });
+      const data = await res.json();
+      const faceOk = data.detected;
+      setCheck('chk-face', faceOk);
+      setCheck('chk-light', faceOk); // if face detected, lighting is adequate
+      document.getElementById('faceStatus').textContent = faceOk ? 'FACE LOCKED' : 'NO FACE DETECTED';
+      document.getElementById('startFacialBtn').disabled = !faceOk;
+
+      // Update tilt needle
+      if (faceOk && data.signals && data.signals.head_tilt) {
+        const tiltDeg = data.signals.head_tilt.mean_tilt_deg ?? data.signals.head_tilt.raw_tilt_deg ?? 0;
+        // Map tilt: -20°..+20° → 0%..100% needle position
+        const clamped = Math.max(-20, Math.min(20, tiltDeg));
+        const pct     = ((clamped + 20) / 40) * 100;
+        document.getElementById('tiltNeedle').style.left = pct + '%';
+        document.getElementById('tiltDeg').textContent   = Math.abs(tiltDeg).toFixed(1) + '°';
+        // Colour needle: green when level, amber when tilting, red when excessive
+        const needleColor = Math.abs(tiltDeg) < 3 ? 'var(--green)' : Math.abs(tiltDeg) < 8 ? 'var(--amber)' : 'var(--red)';
+        document.getElementById('tiltNeedle').style.background   = needleColor;
+        document.getElementById('tiltNeedle').style.boxShadow    = `0 0 5px ${needleColor}`;
+        document.getElementById('tiltDeg').style.color           = needleColor;
+
+        // Big tilt readout
+        const tiltColor = Math.abs(tiltDeg) < 3 ? 'var(--green)' : Math.abs(tiltDeg) < 8 ? 'var(--amber)' : 'var(--red)';
+        document.getElementById('lmTiltVal').innerHTML = Math.abs(tiltDeg).toFixed(1) + '<span class="lm-unit">°</span>';
+        document.getElementById('lmTiltVal').style.color = tiltColor;
+        const tiltPct = Math.min(100, (Math.abs(tiltDeg) / 20) * 100);
+        document.getElementById('lmTiltBar').style.width      = tiltPct + '%';
+        document.getElementById('lmTiltBar').style.background = tiltColor;
+      } else {
+        document.getElementById('tiltNeedle').style.left = '50%';
+        document.getElementById('tiltDeg').textContent   = '—';
+        document.getElementById('lmTiltVal').innerHTML   = '—<span class="lm-unit">°</span>';
+        document.getElementById('lmTiltVal').style.color = 'var(--text-dim)';
+        document.getElementById('lmTiltBar').style.width = '0%';
+      }
+
+      // Big mouth readout
+      if (faceOk && data.signals && data.signals.mouth_openness) {
+        const mouthRatio = data.signals.mouth_openness.raw_ratio || 0;
+        const mouthColor = mouthRatio < 0.08 ? 'var(--green)' : mouthRatio < 0.15 ? 'var(--amber)' : 'var(--red)';
+        document.getElementById('lmMouthVal').innerHTML = mouthRatio.toFixed(3) + '<span class="lm-unit">ratio</span>';
+        document.getElementById('lmMouthVal').style.color = mouthColor;
+        const mouthPct = Math.min(100, (mouthRatio / 0.30) * 100);
+        document.getElementById('lmMouthBar').style.width      = mouthPct + '%';
+        document.getElementById('lmMouthBar').style.background = mouthColor;
+      } else {
+        document.getElementById('lmMouthVal').innerHTML   = '—<span class="lm-unit">ratio</span>';
+        document.getElementById('lmMouthVal').style.color = 'var(--text-dim)';
+        document.getElementById('lmMouthBar').style.width = '0%';
+      }
+
+      if (faceOk) {
+        document.getElementById('facialStatus').textContent = 'Face detected. Ready to begin capture.';
+        document.getElementById('facialStatus').className = 'facial-status good';
+      } else {
+        document.getElementById('facialStatus').textContent = 'Position your face in the centre of the frame.';
+        document.getElementById('facialStatus').className = 'facial-status';
+      }
+    } catch(e) {}
+  }, 400);
+}
+
+function setCheck(id, ok) {
+  const el = document.getElementById(id);
+  el.textContent = ok ? '✓' : '○';
+  el.className   = 'check-icon' + (ok ? ' ok' : '');
+}
+
+// ── Facial Calibration ──────────────────────────────────────────────────────
+async function beginFacialCal() {
+  clearInterval(faceMonitorId);
+  document.getElementById('startFacialBtn').style.display = 'none';
+  document.getElementById('facialStatus').textContent = 'Recording... hold still.';
+  document.getElementById('ringWrap').style.display = 'flex';
+
+  await fetch('/api/calibrate/start', { method: 'POST', credentials: 'include' });
+  calStart = Date.now();
+
+  calId = setInterval(async () => {
+    const elapsed  = Date.now() - calStart;
+    const progress = Math.min(1, elapsed / CAL_DUR);
+    const rem      = Math.max(0, Math.ceil((CAL_DUR - elapsed) / 1000));
+    document.getElementById('ringFill').style.strokeDashoffset = 283 * (1 - progress);
+    document.getElementById('ringN').textContent = rem;
+
+    cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+    ctx.drawImage(vid, 0, 0);
+    const res  = await fetch('/api/calibrate/frame', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: cvs.toDataURL('image/jpeg', 0.8) })
+    }).then(r => r.json()).catch(() => ({}));
+    document.getElementById('ringFrames').textContent = `FRAMES: ${res.frames_collected || 0}`;
+
+    if (elapsed >= CAL_DUR) {
+      clearInterval(calId);
+      finishFacialCal();
+    }
+  }, 200);
+}
+
+async function finishFacialCal() {
+  const res  = await fetch('/api/calibrate/finish', { method: 'POST', credentials: 'include' });
+  const data = await res.json();
+  if (!data.success) {
+    document.getElementById('facialStatus').textContent = 'Capture failed: ' + (data.error || 'unknown error') + '. Try again.';
+    document.getElementById('facialStatus').className = 'facial-status warn';
+    document.getElementById('ringWrap').style.display = 'none';
+    document.getElementById('startFacialBtn').style.display = '';
+    monitorFace();
+    return;
+  }
+  facialDone     = true;
+  facialBaseline = data.baseline;
+  setStepDone(1);
+  sbMsg('Facial baseline saved — proceeding to speech calibration');
+
+  if (speechReady && sentences.length > 0) {
+    goToStep2();
+  } else {
+    // No speech module — skip straight to complete
+    goToComplete(null);
+  }
+}
+
+// ── Step transitions ────────────────────────────────────────────────────────
+function setStepDone(n) {
+  document.getElementById(`stepNum${n}`).className = 'step-num done';
+  document.getElementById(`stepNum${n}`).textContent = '✓';
+  document.getElementById(`stepLbl${n}`).className = 'step-label done';
+  if (n < 3) {
+    document.getElementById(`stepLine${n}`).classList.add('done');
+    document.getElementById(`stepNum${n+1}`).className = 'step-num active';
+    document.getElementById(`stepLbl${n+1}`).className = 'step-label active';
+  }
+}
+
+function goToStep2() {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'flex';
+  document.getElementById('step2Body').classList.add('on');
+  buildSpeechDots();
+  loadSentence(0);
+  initSpeechCal();
+  sbMsg('Speech calibration — read each sentence clearly at your normal pace');
+}
+
+async function initSpeechCal() {
+  const res  = await fetch('/api/speech/calibrate/start', { method: 'POST', credentials: 'include' });
+  const data = await res.json();
+}
+
+function buildSpeechDots() {
+  const el = document.getElementById('speechDots');
+  el.innerHTML = '';
+  sentences.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 's-dot' + (i === 0 ? ' active' : '');
+    d.id = `sdot-${i}`;
+    el.appendChild(d);
+  });
+}
+
+function loadSentence(idx) {
+  calSpeechIdx = idx;
+  document.getElementById('sentNum').textContent    = `SENTENCE ${idx + 1} OF ${sentences.length}`;
+  document.getElementById('sentDisplay').textContent = sentences[idx];
+  document.getElementById('speechTranscript').textContent = 'Transcript will appear here after recording...';
+  document.getElementById('speechTranscript').className   = 'transcript-prev';
+  document.getElementById('micLbl').textContent = 'TAP TO RECORD';
+  document.getElementById('micBtn').classList.remove('rec');
+}
+
+// ── Speech Recording ────────────────────────────────────────────────────────
+async function toggleMic() {
+  if (!isRecording) await startRec();
+  else              await stopRec();
+}
+
+async function startRec() {
+  recChunks = [];
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRec = new MediaRecorder(s);
+    mediaRec.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+    mediaRec.start();
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('rec');
+    document.getElementById('micLbl').textContent = 'RECORDING… TAP TO STOP';
+    sbMsg(`Recording sentence ${calSpeechIdx + 1}...`);
+  } catch(e) {
+    sbMsg('Microphone access denied');
+  }
+}
+
+async function stopRec() {
+  if (!mediaRec) return;
+  mediaRec.stop();
+  mediaRec.stream.getTracks().forEach(t => t.stop());
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('rec');
+  document.getElementById('micLbl').textContent = 'PROCESSING...';
+  await new Promise(r => setTimeout(r, 350));
+  const b64 = await blobToB64(new Blob(recChunks, { type: 'audio/webm' }));
+  await submitSpeechRecording(b64);
+}
+
+function blobToB64(blob) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function submitSpeechRecording(b64) {
+  const res  = await fetch('/api/speech/calibrate/record', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ audio: b64 })
+  });
+  const data = await res.json();
+
+  if (!data.success) {
+    document.getElementById('speechTranscript').textContent = 'Error: ' + (data.error || 'Processing failed. Try again.');
+    document.getElementById('speechTranscript').className   = 'transcript-prev';
+    document.getElementById('micLbl').textContent = 'TRY AGAIN';
+    sbMsg('Recording failed — please try again');
+    return;
+  }
+
+  // Show transcript
+  document.getElementById('speechTranscript').textContent = `"${data.transcription}" — ${data.wpm} WPM`;
+  document.getElementById('speechTranscript').className   = 'transcript-prev good';
+
+  // Mark dot done
+  const prev = document.getElementById(`sdot-${calSpeechIdx}`);
+  if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+
+  // Add to results list
+  addSpeechResult(calSpeechIdx, data.transcription, data.wpm);
+
+  sbMsg(`Sentence ${calSpeechIdx + 1} recorded — ${data.wpm} WPM`);
+
+  if (data.done) {
+    await finishSpeechCal();
+  } else {
+    // Move to next sentence
+    const nextIdx = calSpeechIdx + 1;
+    const next = document.getElementById(`sdot-${nextIdx}`);
+    if (next) next.classList.add('active');
+    loadSentence(nextIdx);
+    document.getElementById('speechFooterHint').textContent =
+      `${sentences.length - nextIdx} sentence${sentences.length - nextIdx !== 1 ? 's' : ''} remaining.`;
+  }
+}
+
+function addSpeechResult(idx, text, wpm) {
+  const el  = document.getElementById('speechResultsList');
+  const div = document.createElement('div');
+  div.className = 'sr-item';
+  div.innerHTML = `<span class="sr-idx">${idx + 1}.</span><span class="sr-txt">"${text}"</span><span class="sr-wpm">${wpm} WPM ✓</span>`;
+  el.appendChild(div);
+}
+
+async function finishSpeechCal() {
+  const res  = await fetch('/api/speech/calibrate/finish', { method: 'POST', credentials: 'include' });
+  const data = await res.json();
+  speechDone     = true;
+  speechBaseline = data.speech_baseline || null;
+  setStepDone(2);
+  goToComplete(speechBaseline);
+}
+
+function skipSpeech() {
+  speechDone = false;
+  setStepDone(2);
+  goToComplete(null);
+  sbMsg('Speech calibration skipped — only facial baseline active');
+}
+
+// ── Complete ────────────────────────────────────────────────────────────────
+function goToComplete(spBase) {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3Body').classList.add('on');
+  setStepDone(3);
+
+  if (facialBaseline) {
+    document.getElementById('cstatEar').textContent     = facialBaseline.ear     ? facialBaseline.ear.toFixed(3)     : '—';
+    document.getElementById('cstatRedness').textContent = facialBaseline.eye_redness ? facialBaseline.eye_redness.toFixed(3) : '—';
+    document.getElementById('cstatTilt').textContent    = facialBaseline.head_tilt   ? facialBaseline.head_tilt.toFixed(1)   : '—';
+    document.getElementById('cstatFrames').textContent  = facialBaseline.frames || '—';
+  }
+  document.getElementById('cstatWpm').textContent = spBase ? spBase.wpm : 'N/A';
+
+  sbMsg('Calibration complete — ready to launch dashboard');
+}
+
+function launchDashboard() {
+  // Stop camera stream before leaving
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  window.location = '/';
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function sbMsg(msg) { document.getElementById('sbMsg').textContent = msg; }
+
+init();
+</script>
+</body>
+</html>

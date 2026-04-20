@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOBER-DRIVE — ML Training Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#050607; --panel:#0b0e12; --panel2:#10151c;
+  --bezel:#1b2230; --bezel2:#273145;
+  --amber:#4db5ff; --amber-dim:#2b6fa3; --amber-glow:#8ad1ff;
+  --green:#4dffb0; --green-dim:#2a7a57;
+  --red:#ff5a5a; --red-dim:#7a2020;
+  --orange:#ff8c00;
+  --text:#e6edf7; --text-dim:#9aa6bb;
+  --fo:'Orbitron',monospace; --fr:'Rajdhani',sans-serif; --fm:'Share Tech Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;min-height:100%;background:var(--void);color:var(--text);font-family:var(--fm);font-size:16px;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.13) 2px,rgba(0,0,0,0.13) 4px);}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(77,181,255,0.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(77,181,255,0.05) 1px,transparent 1px);
+  background-size:40px 40px;}
+
+/* ── LAYOUT ── */
+.shell{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── TOP BAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;
+  border-bottom:1px solid var(--bezel2);background:var(--panel);position:sticky;top:0;z-index:100;flex-shrink:0;}
+.topbar::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),var(--amber-dim),var(--amber),transparent);opacity:.5;}
+.sys-id{font-family:var(--fo);font-weight:900;font-size:.78rem;letter-spacing:.28em;color:var(--amber);text-shadow:0 0 10px rgba(77,181,255,.6);}
+.sys-id span{color:var(--text-dim);font-weight:400;}
+.topbar-c{font-size:.66rem;letter-spacing:.16em;color:var(--text-dim);display:flex;gap:1.5rem;align-items:center;}
+.live{color:var(--green);animation:blink 2s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tbtn{font-family:var(--fo);font-size:.62rem;letter-spacing:.15em;background:transparent;
+  border:1px solid var(--bezel2);color:var(--text-dim);padding:.2rem .7rem;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block;}
+.tbtn:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── PAGE CONTENT ── */
+.page{flex:1;padding:2rem 2rem 3rem;max-width:1100px;margin:0 auto;width:100%;}
+
+/* ── PAGE TITLE ── */
+.page-title-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--bezel2);position:relative;}
+.page-title-row::after{content:'';position:absolute;bottom:-1px;left:0;width:20%;height:1px;background:linear-gradient(90deg,var(--amber),transparent);}
+.page-title{font-family:var(--fo);font-weight:900;font-size:1.1rem;letter-spacing:.22em;color:var(--amber);text-shadow:0 0 14px rgba(77,181,255,.5);}
+.page-sub{font-size:.6rem;letter-spacing:.1em;color:var(--text-dim);margin-top:.3rem;line-height:1.8;}
+.model-status-pill{font-family:var(--fo);font-size:.58rem;letter-spacing:.18em;padding:.3rem .9rem;border:1px solid var(--bezel2);color:var(--text-dim);display:flex;align-items:center;gap:.5rem;}
+.model-status-pill.trained{border-color:var(--green);color:var(--green);}
+.model-status-pill.untrained{border-color:var(--orange);color:var(--orange);}
+
+/* ── GRID LAYOUT ── */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;}
+.full-width{grid-column:1/-1;}
+
+/* ── SECTION CARD ── */
+.card{background:var(--panel);border:1px solid var(--bezel2);position:relative;}
+.card::before,.card::after{content:'';position:absolute;width:14px;height:14px;z-index:2;pointer-events:none;opacity:.3;}
+.card::before{top:0;right:0;border-top:1px solid var(--amber);border-right:1px solid var(--amber);}
+.card::after{bottom:0;left:0;border-bottom:1px solid var(--amber);border-left:1px solid var(--amber);}
+.card-header{padding:.7rem 1.2rem;border-bottom:1px solid var(--bezel2);background:var(--panel2);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:var(--fo);font-size:.56rem;font-weight:700;letter-spacing:.2em;color:var(--amber-dim);}
+.card-badge{font-size:.52rem;letter-spacing:.1em;padding:.15rem .5rem;border:1px solid;display:inline-block;}
+.card-badge.ok{border-color:var(--green);color:var(--green);}
+.card-badge.warn{border-color:var(--orange);color:var(--orange);}
+.card-badge.err{border-color:var(--red);color:var(--red);}
+.card-body{padding:1.2rem;}
+
+/* ── STATUS OVERVIEW ── */
+.status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;}
+.stat-box{background:var(--panel2);border:1px solid var(--bezel2);border-left:3px solid var(--amber-dim);padding:.8rem 1rem;}
+.stat-box.drunk{border-left-color:var(--red);}
+.stat-box.sober{border-left-color:var(--green);}
+.stat-box.model{border-left-color:var(--amber);}
+.stat-lbl{font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.4rem;}
+.stat-val{font-family:var(--fo);font-weight:900;font-size:1.6rem;color:#fff;line-height:1;}
+.stat-sub{font-size:.52rem;color:var(--text-dim);margin-top:.3rem;}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{border:1px dashed var(--bezel2);padding:1.8rem 1rem;text-align:center;cursor:pointer;transition:all .25s;position:relative;background:rgba(0,0,0,.2);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--amber);background:rgba(77,181,255,.04);}
+.upload-icon{font-size:2rem;margin-bottom:.5rem;opacity:.5;}
+.upload-lbl{font-size:.62rem;letter-spacing:.1em;color:var(--text-dim);line-height:1.8;}
+.upload-lbl span{color:var(--amber);}
+#fileInputDrunk,#fileInputSober{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+/* Label toggle */
+.label-tabs{display:flex;gap:0;margin-bottom:.9rem;}
+.label-tab{flex:1;padding:.5rem;text-align:center;font-family:var(--fo);font-size:.6rem;letter-spacing:.15em;
+  cursor:pointer;border:1px solid var(--bezel2);background:transparent;color:var(--text-dim);transition:all .2s;}
+.label-tab.active.drunk{border-color:var(--red);color:var(--red);background:rgba(255,90,90,.07);}
+.label-tab.active.sober{border-color:var(--green);color:var(--green);background:rgba(77,255,176,.07);}
+.label-tab:first-child{border-right:none;}
+
+/* Camera capture */
+.cam-capture-row{display:flex;gap:.8rem;margin-top:.9rem;}
+.cam-preview{flex:1;position:relative;background:#000;border:1px solid var(--bezel2);overflow:hidden;height:140px;}
+.cam-preview video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+.cam-preview canvas{position:absolute;inset:0;width:100%;height:100%;display:none;}
+.cam-preview .cam-label{position:absolute;bottom:4px;left:6px;font-size:.5rem;letter-spacing:.1em;color:rgba(230,237,247,.5);}
+.cam-actions{display:flex;flex-direction:column;gap:.6rem;justify-content:center;}
+.btn{font-family:var(--fo);font-size:.6rem;letter-spacing:.15em;background:transparent;border:1px solid var(--bezel2);
+  color:var(--text-dim);padding:.4rem .9rem;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn:hover{border-color:var(--amber);color:var(--amber);}
+.btn.primary{border-color:var(--amber);color:var(--amber);}
+.btn.primary:hover{background:var(--amber);color:var(--void);}
+.btn.danger{border-color:var(--red);color:var(--red);}
+.btn.danger:hover{background:var(--red);color:#fff;}
+.btn.success{border-color:var(--green);color:var(--green);}
+.btn.success:hover{background:var(--green);color:var(--void);}
+.btn.drunk-btn{border-color:var(--red);color:var(--red);}
+.btn.drunk-btn:hover{background:var(--red);color:#fff;}
+.btn.sober-btn{border-color:var(--green);color:var(--green);}
+.btn.sober-btn:hover{background:var(--green);color:var(--void);}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+
+/* Upload feedback */
+.upload-feedback{font-size:.58rem;letter-spacing:.08em;color:var(--text-dim);margin-top:.6rem;min-height:1.2em;line-height:1.7;}
+.upload-feedback.ok{color:var(--green);}
+.upload-feedback.err{color:var(--red);}
+
+/* ── IMAGE THUMBNAILS ── */
+.thumb-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem;max-height:110px;overflow-y:auto;}
+.thumb{width:44px;height:44px;object-fit:cover;border:1px solid var(--bezel2);opacity:.7;transition:opacity .2s;}
+.thumb:hover{opacity:1;}
+.thumb.drunk-thumb{border-color:rgba(255,90,90,.5);}
+.thumb.sober-thumb{border-color:rgba(77,255,176,.5);}
+.thumb-count{font-size:.52rem;letter-spacing:.1em;color:var(--text-dim);align-self:center;}
+
+/* ── TRAINING PANEL ── */
+.train-action-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.train-req{font-size:.58rem;letter-spacing:.08em;color:var(--text-dim);line-height:1.9;}
+.train-req .req-ok{color:var(--green);}
+.train-req .req-fail{color:var(--red);}
+
+/* Progress bar */
+.progress-wrap{margin-top:.9rem;display:none;}
+.progress-wrap.on{display:block;}
+.progress-label{font-size:.55rem;letter-spacing:.14em;color:var(--text-dim);margin-bottom:.4rem;}
+.progress-track{height:4px;background:var(--bezel2);overflow:hidden;}
+.progress-fill{height:100%;width:0%;background:var(--amber);transition:width .4s;box-shadow:0 0 6px var(--amber);}
+
+/* ── RESULTS PANEL ── */
+.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;}
+.result-item{background:var(--panel2);border:1px solid var(--bezel2);padding:.8rem 1rem;text-align:center;}
+.result-lbl{font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.4rem;}
+.result-val{font-family:var(--fo);font-weight:900;font-size:1.3rem;color:var(--amber);}
+
+/* Feature importance */
+.importance-list{display:flex;flex-direction:column;gap:.5rem;margin-top:.8rem;}
+.imp-row{display:flex;align-items:center;gap:.8rem;}
+.imp-name{font-size:.58rem;letter-spacing:.08em;color:var(--text-dim);width:100px;flex-shrink:0;}
+.imp-track{flex:1;height:5px;background:var(--bezel2);overflow:hidden;}
+.imp-fill{height:100%;background:var(--amber);transition:width .6s;box-shadow:0 0 4px var(--amber);}
+.imp-val{font-family:var(--fo);font-size:.6rem;color:var(--amber);width:36px;text-align:right;flex-shrink:0;}
+
+/* ── LOG ── */
+.log-box{background:rgba(0,0,0,.4);border:1px solid var(--bezel2);padding:.7rem 1rem;
+  height:120px;overflow-y:auto;font-size:.58rem;letter-spacing:.06em;line-height:2;}
+.log-line{color:var(--text-dim);}
+.log-line.ok{color:var(--green);}
+.log-line.err{color:var(--red);}
+.log-line.info{color:var(--amber);}
+
+/* ── STATUS BAR ── */
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:40px;
+  border-top:1px solid var(--bezel2);background:var(--panel);font-size:.58rem;letter-spacing:.12em;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="sys-id">SOBER-DRIVE <span>/ ML TRAINING LAB</span></div>
+    <div class="topbar-c">
+      <span class="live">● TRAINING SYSTEM ACTIVE</span>
+      <span id="tbModelStatus" style="color:var(--orange)">MODEL: NOT TRAINED</span>
+    </div>
+    <div style="display:flex;gap:.6rem;align-items:center;">
+      <a href="/" class="tbtn">◀ DASHBOARD</a>
+      <a href="/profile" class="tbtn">PROFILE</a>
+    </div>
+  </div>
+
+  <!-- PAGE -->
+  <div class="page">
+
+    <!-- Title row -->
+    <div class="page-title-row">
+      <div>
+        <div class="page-title">MACHINE LEARNING TRAINING LAB</div>
+        <div class="page-sub">Upload labelled facial images to train a custom drunk/sober classifier.<br>
+        The model runs locally on your system and augments real-time facial analysis.</div>
+      </div>
+      <div class="model-status-pill untrained" id="modelPill">◉ MODEL NOT TRAINED</div>
+    </div>
+
+    <!-- STATUS OVERVIEW -->
+    <div class="card full-width" style="margin-bottom:1.2rem;">
+      <div class="card-header">
+        <span class="card-title">◈ TRAINING DATA STATUS</span>
+        <button class="btn" onclick="loadStatus()" style="font-size:.52rem;padding:.2rem .6rem;">↺ REFRESH</button>
+      </div>
+      <div class="card-body">
+        <div class="status-grid">
+          <div class="stat-box drunk">
+            <div class="stat-lbl">DRUNK IMAGES</div>
+            <div class="stat-val" id="statDrunk">—</div>
+            <div class="stat-sub">labelled impaired</div>
+          </div>
+          <div class="stat-box sober">
+            <div class="stat-lbl">SOBER IMAGES</div>
+            <div class="stat-val" id="statSober">—</div>
+            <div class="stat-sub">labelled baseline</div>
+          </div>
+          <div class="stat-box model">
+            <div class="stat-lbl">TOTAL SAMPLES</div>
+            <div class="stat-val" id="statTotal">—</div>
+            <div class="stat-sub">combined dataset</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">MODEL TRAINED</div>
+            <div class="stat-val" id="statModelDate" style="font-size:.7rem;color:var(--text-dim)">NONE</div>
+            <div class="stat-sub" id="statModelSub">no model on disk</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD + CAPTURE GRID -->
+    <div class="main-grid">
+
+      <!-- UPLOAD IMAGES -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">◈ UPLOAD LABELLED IMAGES</span>
+          <span class="card-badge warn">STEP 1</span>
+        </div>
+        <div class="card-body">
+          <div class="label-tabs">
+            <div class="label-tab active drunk" id="tabDrunk" onclick="setUploadLabel('drunk')">⚠ DRUNK / IMPAIRED</div>
+            <div class="label-tab sober" id="tabSober" onclick="setUploadLabel('sober')">✓ SOBER / CLEAR</div>
+          </div>
+
+          <div class="upload-zone" id="uploadZone" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+            <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
+            <div class="upload-icon">📁</div>
+            <div class="upload-lbl">Drop images here or <span>click to browse</span><br>
+              JPG, PNG, WEBP accepted · Multiple files OK<br>
+              Face must be clearly visible</div>
+          </div>
+
+          <div class="upload-feedback" id="uploadFeedback">Select a label above, then upload images.</div>
+
+          <div class="thumb-row" id="thumbRow"></div>
+        </div>
+      </div>
+
+      <!-- CAMERA CAPTURE -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">◈ LIVE CAMERA CAPTURE</span>
+          <span class="card-badge warn">STEP 1 (ALT)</span>
+        </div>
+        <div class="card-body">
+          <div class="label-tabs">
+            <div class="label-tab active drunk" id="camTabDrunk" onclick="setCamLabel('drunk')">⚠ DRUNK / IMPAIRED</div>
+            <div class="label-tab sober" id="camTabSober" onclick="setCamLabel('sober')">✓ SOBER / CLEAR</div>
+          </div>
+
+          <div class="cam-capture-row">
+            <div class="cam-preview" id="camPreview">
+              <video id="camVid" autoplay playsinline muted></video>
+              <canvas id="camCvs"></canvas>
+              <div class="cam-label" id="camPreviewLbl">CAMERA OFFLINE</div>
+            </div>
+            <div class="cam-actions">
+              <button class="btn primary" id="camStartBtn" onclick="toggleCamera()">▶ START CAM</button>
+              <button class="btn drunk-btn" id="snapDrunkBtn" onclick="snapCapture('drunk')" disabled>📷 SNAP DRUNK</button>
+              <button class="btn sober-btn" id="snapSoberBtn" onclick="snapCapture('sober')" disabled>📷 SNAP SOBER</button>
+            </div>
+          </div>
+
+          <div class="upload-feedback" id="camFeedback">Start camera then snap shots for each label.</div>
+          <div class="thumb-row" id="camThumbRow"></div>
+        </div>
+      </div>
+
+    </div><!-- /main-grid -->
+
+    <!-- TRAIN + RESULTS -->
+    <div class="card full-width" style="margin-bottom:1.2rem;">
+      <div class="card-header">
+        <span class="card-title">◈ TRAIN MODEL</span>
+        <span class="card-badge warn">STEP 2</span>
+      </div>
+      <div class="card-body">
+
+        <div class="train-req" id="trainReq">
+          Checking requirements...
+        </div>
+
+        <div style="height:.8rem;"></div>
+
+        <div class="train-action-row">
+          <button class="btn primary" id="trainBtn" onclick="runTraining()" disabled>▶ TRAIN MODEL</button>
+          <button class="btn danger" onclick="confirmClear()">✕ CLEAR ALL DATA</button>
+          <span style="font-size:.56rem;letter-spacing:.1em;color:var(--text-dim);" id="trainHint">Upload at least 2 images per class to enable training.</span>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label" id="progressLabel">TRAINING IN PROGRESS...</div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <!-- Results (hidden until trained) -->
+        <div id="resultsPanel" style="display:none;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--bezel2);">
+          <div style="font-size:.55rem;letter-spacing:.2em;color:var(--text-dim);margin-bottom:.8rem;">TRAINING RESULTS</div>
+          <div class="results-grid">
+            <div class="result-item">
+              <div class="result-lbl">DRUNK SAMPLES</div>
+              <div class="result-val" id="resDrunk">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-lbl">SOBER SAMPLES</div>
+              <div class="result-val" id="resSober">—</div>
+            </div>
+            <div class="result-item">
+              <div class="result-lbl">CV ACCURACY</div>
+              <div class="result-val" id="resAcc">—</div>
+            </div>
+          </div>
+
+          <div style="margin-top:1rem;font-size:.55rem;letter-spacing:.18em;color:var(--text-dim);margin-bottom:.4rem;">FEATURE IMPORTANCE</div>
+          <div class="importance-list" id="importanceList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">◈ ACTIVITY LOG</span>
+        <button class="btn" onclick="clearLog()" style="font-size:.5rem;padding:.15rem .5rem;">CLEAR</button>
+      </div>
+      <div class="card-body" style="padding:.6rem 1rem;">
+        <div class="log-box" id="logBox"></div>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <span>SOBER-DRIVE EV PLATFORM — ML TRAINING LAB</span>
+    <span id="sbMsg">INITIALISING...</span>
+    <span style="color:var(--amber-dim)">BUILD 2.4.0</span>
+  </div>
+</div><!-- /shell -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let uploadLabel  = 'drunk';
+let camLabel     = 'drunk';
+let camStream    = null;
+let camActive    = false;
+let statusData   = null;
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+async function init() {
+  log('Training lab initialised', 'info');
+  await loadStatus();
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const res  = await fetch('/api/train/status');
+    const data = await res.json();
+    statusData = data;
+
+    document.getElementById('statDrunk').textContent = data.n_drunk;
+    document.getElementById('statSober').textContent = data.n_sober;
+    document.getElementById('statTotal').textContent = data.n_drunk + data.n_sober;
+
+    if (data.model_exists && data.model_trained_at) {
+      const d = new Date(data.model_trained_at);
+      document.getElementById('statModelDate').textContent  = d.toLocaleDateString();
+      document.getElementById('statModelDate').style.color  = 'var(--green)';
+      document.getElementById('statModelSub').textContent   = d.toLocaleTimeString();
+      document.getElementById('modelPill').textContent      = '◉ MODEL TRAINED';
+      document.getElementById('modelPill').className        = 'model-status-pill trained';
+      document.getElementById('tbModelStatus').textContent  = 'MODEL: TRAINED';
+      document.getElementById('tbModelStatus').style.color  = 'var(--green)';
+    } else {
+      document.getElementById('statModelDate').textContent  = 'NONE';
+      document.getElementById('statModelDate').style.color  = 'var(--text-dim)';
+      document.getElementById('statModelSub').textContent   = 'no model on disk';
+      document.getElementById('modelPill').textContent      = '◉ MODEL NOT TRAINED';
+      document.getElementById('modelPill').className        = 'model-status-pill untrained';
+      document.getElementById('tbModelStatus').textContent  = 'MODEL: NOT TRAINED';
+      document.getElementById('tbModelStatus').style.color  = 'var(--orange)';
+    }
+
+    updateTrainRequirements(data);
+    sb(`Status loaded — ${data.n_drunk} drunk, ${data.n_sober} sober images`);
+  } catch(e) {
+    log('Failed to load status: ' + e.message, 'err');
+  }
+}
+
+function updateTrainRequirements(data) {
+  const n_drunk = data.n_drunk, n_sober = data.n_sober;
+  const drunkOk = n_drunk >= 2, soberOk = n_sober >= 2;
+  const canTrain = drunkOk && soberOk;
+
+  document.getElementById('trainReq').innerHTML =
+    `<span class="${drunkOk ? 'req-ok' : 'req-fail'}">${drunkOk ? '✓' : '✗'} Drunk images: ${n_drunk} (need ≥ 2)</span>
+     &nbsp;&nbsp;
+     <span class="${soberOk ? 'req-ok' : 'req-fail'}">${soberOk ? '✓' : '✗'} Sober images: ${n_sober} (need ≥ 2)</span>
+     &nbsp;&nbsp;
+     <span style="color:var(--text-dim)">Tip: 10+ images per class gives much better accuracy.</span>`;
+
+  document.getElementById('trainBtn').disabled = !canTrain;
+  document.getElementById('trainHint').textContent = canTrain
+    ? 'Requirements met — ready to train.'
+    : 'Upload at least 2 images per class to enable training.';
+  document.getElementById('trainHint').style.color = canTrain ? 'var(--green)' : 'var(--text-dim)';
+}
+
+// ── Label tabs ────────────────────────────────────────────────────────────────
+function setUploadLabel(lbl) {
+  uploadLabel = lbl;
+  document.getElementById('tabDrunk').className = 'label-tab' + (lbl === 'drunk' ? ' active drunk' : '');
+  document.getElementById('tabSober').className = 'label-tab' + (lbl === 'sober' ? ' active sober' : '');
+  document.getElementById('uploadFeedback').textContent = `Label set to: ${lbl.toUpperCase()} — now select files.`;
+  document.getElementById('uploadFeedback').className   = 'upload-feedback';
+}
+
+function setCamLabel(lbl) {
+  camLabel = lbl;
+  document.getElementById('camTabDrunk').className = 'label-tab' + (lbl === 'drunk' ? ' active drunk' : '');
+  document.getElementById('camTabSober').className = 'label-tab' + (lbl === 'sober' ? ' active sober' : '');
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+function onDrag(e, on) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.toggle('drag', on);
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+
+// ── File upload ───────────────────────────────────────────────────────────────
+async function handleFiles(files) {
+  if (!files || files.length === 0) return;
+  const arr  = Array.from(files);
+  let ok = 0, fail = 0;
+
+  document.getElementById('uploadFeedback').textContent = `Uploading ${arr.length} file(s) as ${uploadLabel.toUpperCase()}...`;
+  document.getElementById('uploadFeedback').className   = 'upload-feedback';
+
+  for (const file of arr) {
+    try {
+      const b64 = await fileToB64(file);
+      const res  = await fetch('/api/train/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, label: uploadLabel })
+      });
+      const data = await res.json();
+      if (data.success) {
+        ok++;
+        addThumb(b64, uploadLabel, 'thumbRow');
+        log(`Uploaded ${file.name} → ${uploadLabel}`, 'ok');
+      } else {
+        fail++;
+        log(`Rejected ${file.name}: ${data.error}`, 'err');
+      }
+    } catch(e) {
+      fail++;
+      log(`Error uploading ${file.name}: ${e.message}`, 'err');
+    }
+  }
+
+  const fb = document.getElementById('uploadFeedback');
+  if (fail === 0) {
+    fb.textContent = `✓ ${ok} image${ok !== 1 ? 's' : ''} uploaded as ${uploadLabel.toUpperCase()}.`;
+    fb.className   = 'upload-feedback ok';
+  } else {
+    fb.textContent = `${ok} uploaded, ${fail} rejected (no face detected or invalid file).`;
+    fb.className   = 'upload-feedback err';
+  }
+
+  await loadStatus();
+  // Reset file input
+  document.getElementById('fileInput').value = '';
+}
+
+function fileToB64(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload  = () => res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+function addThumb(b64, label, containerId) {
+  const img = document.createElement('img');
+  img.src       = b64;
+  img.className = `thumb ${label}-thumb`;
+  img.title     = label;
+  document.getElementById(containerId).appendChild(img);
+
+  // Keep max 20 visible
+  const container = document.getElementById(containerId);
+  while (container.querySelectorAll('.thumb').length > 20) {
+    container.querySelector('.thumb').remove();
+  }
+}
+
+// ── Camera capture ────────────────────────────────────────────────────────────
+async function toggleCamera() {
+  if (!camActive) {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      const vid = document.getElementById('camVid');
+      vid.srcObject = camStream;
+      camActive = true;
+      document.getElementById('camStartBtn').textContent = '■ STOP CAM';
+      document.getElementById('camStartBtn').className   = 'btn danger';
+      document.getElementById('snapDrunkBtn').disabled   = false;
+      document.getElementById('snapSoberBtn').disabled   = false;
+      document.getElementById('camPreviewLbl').textContent = 'CAMERA ACTIVE';
+      log('Camera started', 'info');
+    } catch(e) {
+      log('Camera access denied: ' + e.message, 'err');
+      document.getElementById('camFeedback').textContent = 'Camera access denied.';
+      document.getElementById('camFeedback').className   = 'upload-feedback err';
+    }
+  } else {
+    if (camStream) camStream.getTracks().forEach(t => t.stop());
+    camActive = false;
+    document.getElementById('camStartBtn').textContent = '▶ START CAM';
+    document.getElementById('camStartBtn').className   = 'btn primary';
+    document.getElementById('snapDrunkBtn').disabled   = true;
+    document.getElementById('snapSoberBtn').disabled   = true;
+    document.getElementById('camPreviewLbl').textContent = 'CAMERA OFFLINE';
+    log('Camera stopped', 'info');
+  }
+}
+
+async function snapCapture(label) {
+  const vid = document.getElementById('camVid');
+  const cvs = document.getElementById('camCvs');
+  if (!vid.videoWidth) {
+    document.getElementById('camFeedback').textContent = 'Camera not ready.';
+    return;
+  }
+  cvs.width  = vid.videoWidth;
+  cvs.height = vid.videoHeight;
+  const ctx  = cvs.getContext('2d');
+  ctx.drawImage(vid, 0, 0);
+  const b64 = cvs.toDataURL('image/jpeg', 0.9);
+
+  // Flash effect
+  cvs.style.display = 'block';
+  cvs.style.opacity = '0.6';
+  setTimeout(() => { cvs.style.opacity = '0'; setTimeout(() => { cvs.style.display = 'none'; }, 200); }, 120);
+
+  try {
+    const res  = await fetch('/api/train/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: b64, label: label })
+    });
+    const data = await res.json();
+    if (data.success) {
+      addThumb(b64, label, 'camThumbRow');
+      document.getElementById('camFeedback').textContent = `✓ Snapshot saved as ${label.toUpperCase()}`;
+      document.getElementById('camFeedback').className   = 'upload-feedback ok';
+      log(`Snapshot captured → ${label}`, 'ok');
+      await loadStatus();
+    } else {
+      document.getElementById('camFeedback').textContent = `✗ ${data.error}`;
+      document.getElementById('camFeedback').className   = 'upload-feedback err';
+      log(`Snap rejected: ${data.error}`, 'err');
+    }
+  } catch(e) {
+    log('Snap error: ' + e.message, 'err');
+  }
+}
+
+// ── Training ──────────────────────────────────────────────────────────────────
+async function runTraining() {
+  document.getElementById('trainBtn').disabled = true;
+  document.getElementById('progressWrap').classList.add('on');
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('progressLabel').textContent  = 'EXTRACTING FEATURES...';
+  log('Training started...', 'info');
+  sb('Training in progress — please wait...');
+
+  // Animate progress bar (indeterminate feel)
+  animateProgress();
+
+  try {
+    const res  = await fetch('/api/train/run', { method: 'POST' });
+    const data = await res.json();
+
+    stopProgress();
+
+    if (!data.success) {
+      log('Training failed: ' + (data.error || 'unknown error'), 'err');
+      sb('Training failed — check log for details');
+      document.getElementById('progressLabel').textContent = 'TRAINING FAILED';
+      document.getElementById('trainBtn').disabled = false;
+      return;
+    }
+
+    const m = data.metrics;
+    log(`Training complete — ${m.total_images} images, CV accuracy: ${m.cv_accuracy ?? 'N/A'}%`, 'ok');
+    sb(`Model trained — accuracy: ${m.cv_accuracy ?? 'N/A'}%`);
+
+    document.getElementById('progressFill').style.width  = '100%';
+    document.getElementById('progressLabel').textContent  = 'TRAINING COMPLETE ✓';
+
+    // Show results
+    document.getElementById('resDrunk').textContent = m.n_drunk;
+    document.getElementById('resSober').textContent = m.n_sober;
+    document.getElementById('resAcc').textContent   = m.cv_accuracy != null ? m.cv_accuracy + '%' : 'N/A';
+    document.getElementById('resAcc').style.color   = m.cv_accuracy >= 75 ? 'var(--green)' : m.cv_accuracy >= 55 ? 'var(--orange)' : 'var(--red)';
+
+    // Feature importance
+    const impEl = document.getElementById('importanceList');
+    impEl.innerHTML = '';
+    const labels = { ear: 'EYE DROOP', eye_redness: 'EYE REDNESS', mouth_ratio: 'MOUTH OPEN', head_tilt: 'HEAD TILT', symmetry: 'SYMMETRY' };
+    const imps   = Object.entries(m.feature_importance).sort((a, b) => b[1] - a[1]);
+    for (const [key, val] of imps) {
+      const pct  = (val * 100).toFixed(1);
+      const row  = document.createElement('div');
+      row.className = 'imp-row';
+      row.innerHTML = `<span class="imp-name">${labels[key] || key}</span>
+        <div class="imp-track"><div class="imp-fill" style="width:${pct}%"></div></div>
+        <span class="imp-val">${pct}%</span>`;
+      impEl.appendChild(row);
+    }
+
+    document.getElementById('resultsPanel').style.display = '';
+    await loadStatus();
+
+  } catch(e) {
+    stopProgress();
+    log('Training error: ' + e.message, 'err');
+    sb('Training error — is scikit-learn installed?');
+    document.getElementById('trainBtn').disabled = false;
+  }
+}
+
+let progressAnim = null;
+function animateProgress() {
+  let p = 0;
+  const fill = document.getElementById('progressFill');
+  progressAnim = setInterval(() => {
+    // Simulate progress that slows down near 90%
+    p += (90 - p) * 0.04;
+    fill.style.width = p.toFixed(1) + '%';
+  }, 200);
+}
+function stopProgress() {
+  clearInterval(progressAnim);
+  document.getElementById('progressFill').style.width = '100%';
+}
+
+// ── Clear data ────────────────────────────────────────────────────────────────
+async function confirmClear() {
+  const choice = confirm('What do you want to clear?\n\nOK = Clear ALL images + model\nCancel = Keep images, clear model only');
+  const clearImages = choice;
+  const clearModel  = true;
+
+  try {
+    const res  = await fetch('/api/train/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clear_images: clearImages, clear_model: clearModel })
+    });
+    const data = await res.json();
+    if (data.success) {
+      log(`Cleared: ${data.removed_images} images, model: ${data.model_cleared}`, 'ok');
+      document.getElementById('thumbRow').innerHTML    = '';
+      document.getElementById('camThumbRow').innerHTML = '';
+      document.getElementById('resultsPanel').style.display = 'none';
+      document.getElementById('progressWrap').classList.remove('on');
+      await loadStatus();
+    }
+  } catch(e) {
+    log('Clear error: ' + e.message, 'err');
+  }
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function log(msg, type = '') {
+  const box  = document.getElementById('logBox');
+  const line = document.createElement('div');
+  const time = new Date().toLocaleTimeString();
+  line.className   = 'log-line ' + type;
+  line.textContent = `[${time}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+  // Keep max 100 lines
+  while (box.children.length > 100) box.removeChild(box.firstChild);
+}
+function clearLog() { document.getElementById('logBox').innerHTML = ''; }
+function sb(msg) { document.getElementById('sbMsg').textContent = msg; }
+
+init();
+</script>
+</body>
+</html>

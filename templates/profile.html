@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoberScan — Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c10; --surface:#0d1520; --surface2:#111e2e; --border:#1a2a3a;
+  --accent:#00e5ff; --text:#c8d8e8; --muted:#4a6070;
+  --normal:#00ff88; --mild:#ffdd00; --moderate:#ff8800; --severe:#ff2244;
+  --fd:'Syne',sans-serif; --fm:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.012) 2px,rgba(0,229,255,0.012) 4px);}
+header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 2rem;border-bottom:1px solid var(--border);position:relative;}
+header::after{content:'';position:absolute;bottom:-1px;left:0;width:25%;height:1px;background:linear-gradient(90deg,var(--accent),transparent);}
+.logo{font-family:var(--fd);font-weight:800;font-size:1.5rem;color:#fff;}
+.logo span{color:var(--accent);}
+.btn-sm{font-family:var(--fm);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.4rem 1rem;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block;}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+
+.page{max-width:780px;margin:0 auto;padding:3rem 2rem;}
+
+/* Not logged in */
+.not-auth{text-align:center;padding:5rem 2rem;}
+.not-auth h2{font-family:var(--fd);font-size:1.5rem;margin-bottom:1rem;}
+.not-auth p{color:var(--muted);font-size:0.8rem;margin-bottom:2rem;}
+
+/* Profile header */
+.profile-header{display:flex;align-items:center;gap:1.8rem;margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border);}
+.avatar{
+  width:72px;height:72px;background:var(--surface);border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-weight:800;font-size:1.8rem;color:var(--accent);flex-shrink:0;
+}
+.profile-info h1{font-family:var(--fd);font-weight:800;font-size:1.6rem;color:#fff;}
+.profile-info .joined{font-size:0.68rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;}
+.profile-info .uid{font-size:0.65rem;color:var(--muted);margin-top:0.15rem;}
+
+/* Section */
+.section{margin-bottom:2.5rem;}
+.section-title{
+  font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-title .badge{
+  font-size:0.6rem;padding:0.2rem 0.6rem;border:1px solid var(--normal);color:var(--normal);
+}
+.section-title .badge.warn{border-color:var(--moderate);color:var(--moderate);}
+
+/* Baseline cards */
+.baseline-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+.bcard{
+  background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+  padding:1.2rem 1.4rem;
+}
+.bcard-label{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
+.bcard-value{font-family:var(--fd);font-weight:800;font-size:1.8rem;color:#fff;}
+.bcard-unit{font-size:0.65rem;color:var(--muted);margin-left:0.3rem;}
+.bcard-desc{font-size:0.62rem;color:var(--muted);margin-top:0.4rem;line-height:1.6;}
+
+/* No baseline */
+.no-baseline{
+  background:var(--surface);border:1px solid var(--border);padding:2rem;
+  text-align:center;
+}
+.no-baseline p{font-size:0.78rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.8;}
+
+.btn-primary{
+  font-family:var(--fd);font-weight:700;font-size:0.85rem;letter-spacing:0.08em;
+  text-transform:uppercase;background:var(--accent);color:#000;border:none;
+  padding:0.75rem 2rem;cursor:pointer;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:background 0.2s;
+}
+.btn-primary:hover{background:#fff;}
+
+/* Info row */
+.info-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;}
+.info-item{
+  background:var(--surface);border:1px solid var(--border);padding:0.8rem 1.2rem;
+  flex:1;min-width:140px;
+}
+.info-item label{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;}
+.info-item span{font-size:0.82rem;color:var(--text);}
+
+/* Actions */
+.actions{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:0.5rem;}
+.btn-danger{
+  font-family:var(--fm);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.5rem 1.2rem;border:1px solid var(--severe);background:transparent;
+  color:var(--severe);cursor:pointer;transition:all 0.2s;
+}
+.btn-danger:hover{background:var(--severe);color:#000;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Sober<span>Scan</span></div>
+  <div style="display:flex;gap:0.8rem;align-items:center;">
+    <a href="/" class="btn-sm">◀ Scanner</a>
+    <button class="btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<!-- Not logged in -->
+<div class="page" id="notAuthView">
+  <div class="not-auth">
+    <h2>You're not signed in</h2>
+    <p>Please sign in to view your profile.</p>
+    <a href="/" class="btn-sm" style="border-color:var(--accent);color:var(--accent);">Go to Scanner</a>
+  </div>
+</div>
+
+<!-- Profile view -->
+<div class="page" id="profileView" style="display:none;">
+
+  <div class="profile-header">
+    <div class="avatar" id="avatarEl">?</div>
+    <div class="profile-info">
+      <h1 id="displayUsername">—</h1>
+      <div class="joined" id="joinedDate">—</div>
+    </div>
+  </div>
+
+  <!-- Account info -->
+  <div class="section">
+    <div class="section-title">◈ ACCOUNT INFO</div>
+    <div class="info-row">
+      <div class="info-item"><label>Username</label><span id="infoUsername">—</span></div>
+      <div class="info-item"><label>Member Since</label><span id="infoJoined">—</span></div>
+      <div class="info-item"><label>Baseline Status</label><span id="infoBaseline">—</span></div>
+    </div>
+  </div>
+
+  <!-- Baseline -->
+  <div class="section">
+    <div class="section-title">
+      ◈ SOBER BASELINE
+      <span class="badge warn" id="baselineBadge">NOT SET</span>
+    </div>
+
+    <div id="noBaselineView">
+      <div class="no-baseline">
+        <p>You haven't recorded a sober baseline yet.<br>
+        Without it, the scanner uses generic population thresholds which are far less accurate.<br>
+        Go to the Scanner and click <strong>Create Baseline</strong> to record your personal measurements.</p>
+        <a href="/" class="btn-primary">Go to Scanner →</a>
+      </div>
+    </div>
+
+      <div id="baselineView" style="display:none;">
+      <div class="baseline-grid">
+        <div class="bcard">
+          <div class="bcard-label">Eye Aspect Ratio</div>
+          <div class="bcard-value" id="bl-ear">—<span class="bcard-unit"></span></div>
+          <div class="bcard-desc">Your natural eye openness. Lower values during analysis indicate droopiness.</div>
+        </div>
+        <div class="bcard">
+          <div class="bcard-label">Eye Redness</div>
+          <div class="bcard-value" id="bl-redness">—<span class="bcard-unit"></span></div>
+          <div class="bcard-desc">Your sober baseline redness score. Higher values during analysis indicate bloodshot / glassy eyes.</div>
+        </div>
+        <div class="bcard">
+          <div class="bcard-label">Mouth Openness Ratio</div>
+          <div class="bcard-value" id="bl-mouth">—<span class="bcard-unit"></span></div>
+          <div class="bcard-desc">Your natural mouth openness. A slack jaw (higher ratio) is a common impairment indicator.</div>
+        </div>
+        <div class="bcard">
+          <div class="bcard-label">Head Tilt Angle</div>
+          <div class="bcard-value" id="bl-tilt">—<span class="bcard-unit">°</span></div>
+          <div class="bcard-desc">Your natural resting head roll in degrees. Increased tilt indicates loss of postural control.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;padding:0.8rem 1.2rem;background:var(--surface);border:1px solid var(--border);font-size:0.68rem;color:var(--muted);">
+        <span style="color:var(--accent)">Recorded: </span><span id="bl-date">—</span>
+        &nbsp;·&nbsp;
+        <span style="color:var(--accent)">Frames: </span><span id="bl-frames">—</span>
+      </div>
+
+      <div class="actions" style="margin-top:1rem;">
+        <a href="/" class="btn-primary">Re-calibrate Baseline</a>
+        <button class="btn-danger" onclick="clearBaseline()">Clear Baseline</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function loadProfile() {
+  const res  = await fetch('/api/me', { credentials: 'include' });
+  const data = await res.json();
+
+  if (!data.logged_in) {
+    document.getElementById('notAuthView').style.display = '';
+    document.getElementById('profileView').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('notAuthView').style.display = 'none';
+  document.getElementById('profileView').style.display = '';
+
+  const u = data.username;
+  document.getElementById('avatarEl').textContent      = u[0].toUpperCase();
+  document.getElementById('displayUsername').textContent = u;
+  document.getElementById('infoUsername').textContent  = u;
+
+  const joined = data.baseline?.created_at
+    ? new Date(data.baseline.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})
+    : 'N/A';
+  document.getElementById('joinedDate').textContent    = 'Account active';
+  document.getElementById('infoJoined').textContent    = 'Local account';
+  document.getElementById('infoBaseline').textContent  = data.has_baseline ? '✓ Recorded' : '✗ Not set';
+
+  if (data.has_baseline && data.baseline) {
+    const b = data.baseline;
+    document.getElementById('noBaselineView').style.display  = 'none';
+    document.getElementById('baselineView').style.display    = '';
+    document.getElementById('baselineBadge').textContent     = 'ACTIVE';
+    document.getElementById('baselineBadge').className       = 'badge';
+
+    document.getElementById('bl-ear').innerHTML     = b.ear.toFixed(3) + ' <span class="bcard-unit"></span>';
+    document.getElementById('bl-redness').innerHTML = (b.eye_redness ?? '—').toFixed ? b.eye_redness.toFixed(3) + ' <span class="bcard-unit"></span>' : '— <span class="bcard-unit"></span>';
+    document.getElementById('bl-mouth').innerHTML   = (b.mouth_ratio ?? '—').toFixed ? b.mouth_ratio.toFixed(3) + ' <span class="bcard-unit"></span>' : '— <span class="bcard-unit"></span>';
+    document.getElementById('bl-tilt').innerHTML    = (b.head_tilt ?? '—').toFixed   ? b.head_tilt.toFixed(1)   + ' <span class="bcard-unit">°</span>'  : '— <span class="bcard-unit">°</span>';
+    document.getElementById('bl-date').textContent  = new Date(b.created_at).toLocaleString();
+    document.getElementById('bl-frames').textContent = b.frames + ' frames';
+  }
+}
+
+async function clearBaseline() {
+  if (!confirm('Clear your baseline? The scanner will fall back to generic thresholds until you re-calibrate.')) return;
+  const res = await fetch('/api/baseline/clear', { method: 'POST', credentials: 'include' });
+  const data = await res.json();
+  if (data.success) {
+    alert('Baseline cleared. Go to the Scanner to record a new one.');
+    loadProfile();
+  }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  window.location = '/';
+}
+
+loadProfile();
+</script>
+</body>
+</html>
